@@ -3,6 +3,7 @@ set -e
 
 echo "--> Applying database migrations"
 python manage.py migrate --noinput
+python manage.py initial
 python manage.py collectstatic --noinput
 
 echo "--> Starting uvicorn"
