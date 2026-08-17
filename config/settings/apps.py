@@ -1,5 +1,7 @@
 LOCAL_APPS = [
     "ledger.core.apps.CoreConfig",
+    "ledger.accounts.apps.AccountsConfig",
+    "ledger.authentication.apps.AuthenticationConfig",
 ]
 
 THIRD_PARTY_APPS = [
@@ -8,6 +10,7 @@ THIRD_PARTY_APPS = [
     "django_celery_results",
     "corsheaders",
     "drf_spectacular",
+    "rest_framework_simplejwt",
 ]
 
 DJANGO_APPS = [
