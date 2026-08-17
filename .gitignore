@@ -25,6 +25,7 @@ ledger/media/
 .idea/
 .vscode/
 *.swp
+/.cursor
 
 # Test / coverage
 .coverage
