@@ -1,0 +1,146 @@
+# Financial Ledger — docker-compose.yml
+#
+#   cp .env.example .env
+#   docker compose up -d --build
+#
+# Services:
+#   api            — Django API via uvicorn (port 8000)
+#   celery_worker  — Celery worker
+#   flower         — Celery monitoring UI (port 5555)
+#   db             — PostgreSQL
+#   redis          — Redis cache/broker helper
+#   rabbitmq       — RabbitMQ broker (+ management UI on 15672)
+
+name: financial-ledger
+
+x-celery-env: &celery-env
+  CELERY_BROKER_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:${RABBITMQ_PORT}//
+
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: financial_ledger_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: financial_ledger_redis
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: >
+      sh -c "redis-server --requirepass $$PASSWORD_REDIS"
+    ports:
+      - "${PORT_REDIS:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$PASSWORD_REDIS ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: financial_ledger_rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  api:
+    build: .
+    container_name: financial_ledger_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      <<: *celery-env
+      POSTGRES_HOST: db
+      HOST_REDIS: redis
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    volumes:
+      - ./ledger/media:/app/ledger/media
+    command: ["./docker/web_entrypoint.sh"]
+
+  celery_worker:
+    build: .
+    container_name: financial_ledger_celery_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      <<: *celery-env
+      POSTGRES_HOST: db
+      HOST_REDIS: redis
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_started
+    volumes:
+      - ./ledger/media:/app/ledger/media
+    command: ["./docker/celery_entrypoint.sh"]
+
+  flower:
+    build: .
+    container_name: financial_ledger_flower
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      <<: *celery-env
+      FLOWER_BASIC_AUTH: ${FLOWER_USER}:${FLOWER_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      celery_worker:
+        condition: service_started
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    command: >
+      celery -A config flower
+      --port=${FLOWER_PORT:-5555}
+      --address=0.0.0.0
+
+volumes:
+  postgres-data:
+  redis-data:
+  rabbitmq-data:

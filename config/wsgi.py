@@ -1,0 +1,9 @@
+"""WSGI config for financial_ledger."""
+
+import os
+
+from django.core.wsgi import get_wsgi_application
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.django.production")
+
+application = get_wsgi_application()
