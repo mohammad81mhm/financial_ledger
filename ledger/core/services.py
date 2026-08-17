@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, TypeVar
 
 from django.db import IntegrityError, models
 from django.db.models import ProtectedError
@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 
-from ledger.core.types import DjangoModelType
+DjangoModelType = TypeVar("DjangoModelType", bound=models.Model)
 
 logger = logging.getLogger(__name__)
 
