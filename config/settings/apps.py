@@ -1,5 +1,6 @@
 LOCAL_APPS = [
     "ledger.core.apps.CoreConfig",
+    "ledger.accounts.apps.AccountsConfig",
 ]
 
 THIRD_PARTY_APPS = [
