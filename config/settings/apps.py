@@ -7,6 +7,7 @@ LOCAL_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "channels",
     "rest_framework",
     "django_filters",
     "django_celery_results",
