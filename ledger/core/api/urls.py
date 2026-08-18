@@ -13,4 +13,8 @@ urlpatterns = [
         "transactions/",
         include(("ledger.transactions.urls.transactions_urls", "transactions")),
     ),
+    path(
+        "transfers/",
+        include(("ledger.transactions.urls.transfers_urls", "transfers")),
+    ),
 ]
