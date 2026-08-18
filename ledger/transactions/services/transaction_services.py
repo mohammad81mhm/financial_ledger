@@ -8,10 +8,12 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from ledger.accounts.models import User
 from ledger.core.exceptions import ApplicationError
+from ledger.transactions.constants import MONITORING_THRESHOLD
 from ledger.transactions.models import TransactionLedger
 from ledger.transactions.selectors.transaction_selectors import (
     get_transaction_by_idempotency_key,
 )
+from ledger.transactions.tasks.monitoring_tasks import notify_monitoring_team
 from ledger.wallets.models import Wallet
 from ledger.wallets.selectors.wallet_selectors import get_wallet_for_user_by_id
 
@@ -211,6 +213,23 @@ def create_transaction_ledger(
     return ledger_entry
 
 
+def _schedule_monitoring_if_needed(
+    *, ledger_entry: TransactionLedger, amount: Decimal
+) -> None:
+    """Schedule a monitoring alert after commit for high-value transfers.
+
+    Args:
+        ledger_entry (TransactionLedger): Completed transfer transaction.
+        amount (Decimal): Transfer amount.
+    """
+    if amount <= MONITORING_THRESHOLD:
+        return
+
+    transaction.on_commit(
+        lambda: notify_monitoring_team.delay(transaction_id=str(ledger_entry.id))
+    )
+
+
 @transaction.atomic
 def credit_increase(
     *, user: User, wallet_id: int, data: dict
@@ -389,6 +408,7 @@ def transfer_between_wallets(
         )
         _decrease_wallet_balance(wallet_id=sender_wallet_id, amount=amount)
         _increase_wallet_balance(wallet_id=receiver_wallet_id, amount=amount)
+        _schedule_monitoring_if_needed(ledger_entry=ledger_entry, amount=amount)
         return ledger_entry, False
     except IntegrityError as exc:
         return _handle_idempotency_integrity_error(
