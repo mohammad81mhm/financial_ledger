@@ -9,16 +9,8 @@ from ledger.transactions.models import TransactionLedger
 from ledger.transactions.services import credit_increase
 
 
-@pytest.fixture
-def api_client(user) -> APIClient:
-    """Return an authenticated API client for transaction endpoint tests."""
-    client = APIClient()
-    client.force_authenticate(user=user)
-    return client
-
-
 @pytest.mark.django_db
-def test_credit_increase_returns_201_then_200(api_client, user, wallet):
+def test_credit_increase_returns_201_then_200(authenticated_api_client, user, wallet):
     """happy path: first credit increase creates a transaction and retries return 200."""
     idempotency_key = uuid4()
     payload = {
@@ -28,8 +20,8 @@ def test_credit_increase_returns_201_then_200(api_client, user, wallet):
     }
     url = f"/api/transactions/wallets/{wallet.id}/credit-increase/"
 
-    first_response = api_client.post(url, payload, format="json")
-    second_response = api_client.post(url, payload, format="json")
+    first_response = authenticated_api_client.post(url, payload, format="json")
+    second_response = authenticated_api_client.post(url, payload, format="json")
 
     assert first_response.status_code == status.HTTP_201_CREATED
     assert second_response.status_code == status.HTTP_200_OK
@@ -53,7 +45,7 @@ def test_credit_increase_requires_authentication(wallet):
 
 
 @pytest.mark.django_db
-def test_transaction_list_returns_user_transactions(api_client, user, wallet):
+def test_transaction_list_returns_user_transactions(authenticated_api_client, user, wallet):
     """happy path: transaction list returns transactions for the authenticated user."""
     credit_increase(
         user=user,
@@ -64,7 +56,7 @@ def test_transaction_list_returns_user_transactions(api_client, user, wallet):
         },
     )
 
-    response = api_client.get("/api/transactions/")
+    response = authenticated_api_client.get("/api/transactions/")
 
     assert response.status_code == status.HTTP_200_OK
     transactions = response.json()["result"]["results"]
@@ -73,7 +65,7 @@ def test_transaction_list_returns_user_transactions(api_client, user, wallet):
 
 @pytest.mark.django_db
 def test_transaction_detail_returns_404_for_foreign_transaction(
-    api_client, user, other_user, receiver_wallet
+    authenticated_api_client, user, other_user, receiver_wallet
 ):
     """sad path: transaction detail hides transactions that do not belong to the user."""
     ledger_entry, _ = credit_increase(
@@ -85,6 +77,6 @@ def test_transaction_detail_returns_404_for_foreign_transaction(
         },
     )
 
-    response = api_client.get(f"/api/transactions/{ledger_entry.id}/")
+    response = authenticated_api_client.get(f"/api/transactions/{ledger_entry.id}/")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
