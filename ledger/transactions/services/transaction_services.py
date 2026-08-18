@@ -118,6 +118,23 @@ def _lock_wallet_by_id(*, wallet_id: int) -> Wallet:
         raise NotFound from exc
 
 
+def _lock_wallets(*, wallet_ids: list[int]) -> list[Wallet]:
+    """Lock multiple wallet rows in ascending ID order.
+
+    Args:
+        wallet_ids (list[int]): Wallet primary keys to lock.
+
+    Returns:
+        list[Wallet]: Locked wallet instances ordered by primary key.
+    """
+    ordered_ids = sorted(set(wallet_ids))
+    return list(
+        Wallet.objects.select_for_update()
+        .filter(id__in=ordered_ids)
+        .order_by("id")
+    )
+
+
 def _ensure_sufficient_balance(*, wallet: Wallet, amount: Decimal) -> None:
     """Ensure a wallet has enough balance for a debit.
 
@@ -292,6 +309,86 @@ def credit_decrease(
             description=description,
         )
         _decrease_wallet_balance(wallet_id=wallet_id, amount=amount)
+        return ledger_entry, False
+    except IntegrityError as exc:
+        return _handle_idempotency_integrity_error(
+            idempotency_key=idempotency_key,
+            exc=exc,
+        )
+
+
+@transaction.atomic
+def transfer_between_wallets(
+    *, user: User, data: dict
+) -> tuple[TransactionLedger, bool]:
+    """Transfer funds between two wallets atomically.
+
+    Args:
+        user (User): Owner of the sender wallet.
+        data (dict): Validated payload with ``sender_wallet_id``,
+            ``receiver_wallet_id``, ``amount``, ``idempotency_key``, and optional
+            ``description``.
+
+    Returns:
+        tuple[TransactionLedger, bool]: Created or existing transaction and
+            whether the record already existed.
+
+    Raises:
+        NotFound: When the sender wallet does not belong to the user or a wallet
+            is missing.
+        ValidationError: When inputs are invalid.
+        ApplicationError: When currencies differ or balance is insufficient.
+    """
+    sender_wallet_id = data["sender_wallet_id"]
+    receiver_wallet_id = data["receiver_wallet_id"]
+    idempotency_key = data["idempotency_key"]
+
+    _ensure_wallet_owned_by_user(user=user, wallet_id=sender_wallet_id)
+
+    idempotent_result = _resolve_idempotent_transaction(
+        idempotency_key=idempotency_key
+    )
+    if idempotent_result is not None:
+        return idempotent_result
+
+    amount = data["amount"]
+    description = data.get("description", "")
+    _validate_amount(amount=amount)
+
+    if sender_wallet_id == receiver_wallet_id:
+        raise ValidationError(_("Sender and receiver wallets must be different."))
+
+    try:
+        locked_wallets = _lock_wallets(
+            wallet_ids=[sender_wallet_id, receiver_wallet_id]
+        )
+        wallets_by_id = {wallet.id: wallet for wallet in locked_wallets}
+
+        if len(wallets_by_id) != 2:
+            raise NotFound
+
+        sender_wallet = wallets_by_id[sender_wallet_id]
+        receiver_wallet = wallets_by_id[receiver_wallet_id]
+
+        if sender_wallet.currency != receiver_wallet.currency:
+            raise ApplicationError(
+                _("Wallets must share the same currency."),
+                code="currency_mismatch",
+            )
+
+        _ensure_sufficient_balance(wallet=sender_wallet, amount=amount)
+
+        ledger_entry = create_transaction_ledger(
+            idempotency_key=idempotency_key,
+            transaction_type=TransactionLedger.TransactionType.TRANSFER,
+            amount=amount,
+            currency=sender_wallet.currency,
+            sender_wallet=sender_wallet,
+            receiver_wallet=receiver_wallet,
+            description=description,
+        )
+        _decrease_wallet_balance(wallet_id=sender_wallet_id, amount=amount)
+        _increase_wallet_balance(wallet_id=receiver_wallet_id, amount=amount)
         return ledger_entry, False
     except IntegrityError as exc:
         return _handle_idempotency_integrity_error(
