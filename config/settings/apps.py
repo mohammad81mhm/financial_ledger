@@ -2,6 +2,7 @@ LOCAL_APPS = [
     "ledger.core.apps.CoreConfig",
     "ledger.accounts.apps.AccountsConfig",
     "ledger.authentication.apps.AuthenticationConfig",
+    "ledger.wallets.apps.WalletsConfig",
 ]
 
 THIRD_PARTY_APPS = [
