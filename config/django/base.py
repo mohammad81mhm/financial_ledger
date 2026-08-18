@@ -22,3 +22,4 @@ from config.settings.database import *  # noqa
 from config.settings.redis import *  # noqa
 from config.settings.rabbitmq import *  # noqa
 from config.settings.celery import *  # noqa
+from config.settings.channels import *  # noqa

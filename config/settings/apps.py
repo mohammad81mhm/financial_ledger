@@ -4,9 +4,11 @@ LOCAL_APPS = [
     "ledger.authentication.apps.AuthenticationConfig",
     "ledger.wallets.apps.WalletsConfig",
     "ledger.transactions.apps.TransactionsConfig",
+    "ledger.notifications.apps.NotificationsConfig",
 ]
 
 THIRD_PARTY_APPS = [
+    "channels",
     "rest_framework",
     "django_filters",
     "django_celery_results",
