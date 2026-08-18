@@ -1,0 +1,218 @@
+from decimal import Decimal
+from uuid import UUID
+
+from django.db import IntegrityError, transaction
+from django.db.models import F
+from django.utils.translation import gettext_lazy as _
+from rest_framework.exceptions import NotFound, ValidationError
+
+from ledger.accounts.models import User
+from ledger.transactions.models import TransactionLedger
+from ledger.transactions.selectors.transaction_selectors import (
+    get_transaction_by_idempotency_key,
+)
+from ledger.wallets.models import Wallet
+from ledger.wallets.selectors.wallet_selectors import get_wallet_for_user_by_id
+
+
+def _validate_amount(*, amount: Decimal) -> None:
+    """Validate that an amount is positive and limited to two decimal places.
+
+    Args:
+        amount (Decimal): Amount supplied by the client.
+
+    Raises:
+        ValidationError: When the amount is zero, negative, or too precise.
+    """
+    if amount <= Decimal("0.00"):
+        raise ValidationError(_("Amount must be greater than zero."))
+
+    quantized = amount.quantize(Decimal("0.01"))
+    if amount != quantized:
+        raise ValidationError(_("Amount cannot have more than 2 decimal places."))
+
+
+def _get_existing_idempotent(*, idempotency_key: UUID) -> TransactionLedger | None:
+    """Return an existing transaction for the given idempotency key.
+
+    Args:
+        idempotency_key (UUID): Client-supplied idempotency key.
+
+    Returns:
+        TransactionLedger | None: Existing transaction or ``None``.
+    """
+    return get_transaction_by_idempotency_key(
+        idempotency_key=idempotency_key
+    ).first()
+
+
+def _resolve_idempotent_transaction(
+    *, idempotency_key: UUID
+) -> tuple[TransactionLedger, bool] | None:
+    """Return an idempotent transaction result when the key already exists.
+
+    Args:
+        idempotency_key (UUID): Client-supplied idempotency key.
+
+    Returns:
+        tuple[TransactionLedger, bool] | None: Existing transaction marked as
+            duplicate, or ``None`` when no row exists yet.
+    """
+    existing = _get_existing_idempotent(idempotency_key=idempotency_key)
+    if existing is None:
+        return None
+    return existing, True
+
+
+def _handle_idempotency_integrity_error(
+    *, idempotency_key: UUID, exc: IntegrityError
+) -> tuple[TransactionLedger, bool]:
+    """Convert a duplicate-key race into an idempotent success response.
+
+    Args:
+        idempotency_key (UUID): Client-supplied idempotency key.
+        exc (IntegrityError): Integrity error raised during insert.
+
+    Returns:
+        tuple[TransactionLedger, bool]: Existing transaction marked as duplicate.
+
+    Raises:
+        IntegrityError: When the error is unrelated to idempotency.
+    """
+    existing = _get_existing_idempotent(idempotency_key=idempotency_key)
+    if existing is None:
+        raise exc
+    return existing, True
+
+
+def _ensure_wallet_owned_by_user(*, user: User, wallet_id: int) -> None:
+    """Ensure the wallet belongs to the given user.
+
+    Args:
+        user (User): Expected wallet owner.
+        wallet_id (int): Wallet primary key.
+
+    Raises:
+        NotFound: When the wallet is missing or owned by another user.
+    """
+    if not get_wallet_for_user_by_id(user=user, wallet_id=wallet_id).exists():
+        raise NotFound
+
+
+def _lock_wallet_by_id(*, wallet_id: int) -> Wallet:
+    """Lock a single wallet row for update.
+
+    Args:
+        wallet_id (int): Wallet primary key.
+
+    Returns:
+        Wallet: Locked wallet instance.
+
+    Raises:
+        NotFound: When the wallet does not exist.
+    """
+    try:
+        return Wallet.objects.select_for_update().get(id=wallet_id)
+    except Wallet.DoesNotExist as exc:
+        raise NotFound from exc
+
+
+def _increase_wallet_balance(*, wallet_id: int, amount: Decimal) -> None:
+    """Atomically increase a wallet balance.
+
+    Args:
+        wallet_id (int): Wallet primary key.
+        amount (Decimal): Amount to add.
+    """
+    Wallet.objects.filter(id=wallet_id).update(balance=F("balance") + amount)
+
+
+def create_transaction_ledger(
+    *,
+    idempotency_key: UUID,
+    transaction_type: str,
+    amount: Decimal,
+    currency: str,
+    description: str,
+    sender_wallet: Wallet | None = None,
+    receiver_wallet: Wallet | None = None,
+) -> TransactionLedger:
+    """Create and persist an immutable transaction ledger entry.
+
+    Args:
+        idempotency_key (UUID): Client-supplied idempotency key.
+        transaction_type (str): One of ``TransactionLedger.TransactionType``.
+        amount (Decimal): Transaction amount.
+        currency (str): Currency code for the transaction.
+        description (str): Optional transaction note.
+        sender_wallet (Wallet | None): Wallet debited for withdrawals and transfers.
+        receiver_wallet (Wallet | None): Wallet credited for deposits and transfers.
+
+    Returns:
+        TransactionLedger: Newly created ledger entry with ``COMPLETED`` status.
+    """
+    ledger_entry = TransactionLedger(
+        idempotency_key=idempotency_key,
+        transaction_type=transaction_type,
+        status=TransactionLedger.Status.COMPLETED,
+        amount=amount,
+        currency=currency,
+        sender_wallet=sender_wallet,
+        receiver_wallet=receiver_wallet,
+        description=description,
+    )
+    ledger_entry.full_clean()
+    ledger_entry.save()
+    return ledger_entry
+
+
+@transaction.atomic
+def credit_increase(
+    *, user: User, wallet_id: int, data: dict
+) -> tuple[TransactionLedger, bool]:
+    """Credit a wallet and record a deposit transaction.
+
+    Args:
+        user (User): Owner of the wallet being credited.
+        wallet_id (int): Primary key of the target wallet.
+        data (dict): Validated payload with ``amount``, ``idempotency_key``, and
+            optional ``description``.
+
+    Returns:
+        tuple[TransactionLedger, bool]: Created or existing transaction and
+            whether the record already existed.
+
+    Raises:
+        NotFound: When the wallet does not belong to the user.
+        ValidationError: When the amount is invalid.
+    """
+    _ensure_wallet_owned_by_user(user=user, wallet_id=wallet_id)
+
+    idempotency_key = data["idempotency_key"]
+    idempotent_result = _resolve_idempotent_transaction(
+        idempotency_key=idempotency_key
+    )
+    if idempotent_result is not None:
+        return idempotent_result
+
+    amount = data["amount"]
+    description = data.get("description", "")
+    _validate_amount(amount=amount)
+
+    try:
+        wallet = _lock_wallet_by_id(wallet_id=wallet_id)
+        ledger_entry = create_transaction_ledger(
+            idempotency_key=idempotency_key,
+            transaction_type=TransactionLedger.TransactionType.DEPOSIT,
+            amount=amount,
+            currency=wallet.currency,
+            receiver_wallet=wallet,
+            description=description,
+        )
+        _increase_wallet_balance(wallet_id=wallet_id, amount=amount)
+        return ledger_entry, False
+    except IntegrityError as exc:
+        return _handle_idempotency_integrity_error(
+            idempotency_key=idempotency_key,
+            exc=exc,
+        )
