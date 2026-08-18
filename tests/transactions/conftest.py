@@ -1,39 +1,12 @@
 import pytest
 from model_bakery import baker
 
-from ledger.accounts.models import User
 from ledger.wallets.models import Wallet
 
 
 @pytest.fixture
-def user(db) -> User:
-    """ 
-    User factory.
-    """
-    return baker.make(
-        User,
-        username="wallet_user",
-        phone_number="10000000001",
-    )
-
-
-@pytest.fixture
-def other_user(db) -> User:
-    """
-    Other user factory.
-    """
-    return baker.make(
-        User,
-        username="other_user",
-        phone_number="10000000002",
-    )
-
-
-@pytest.fixture
 def wallet(user) -> Wallet:
-    """
-    Wallet factory.
-    """
+    """Return a USD wallet owned by the default user."""
     return baker.make(
         Wallet,
         user=user,
@@ -44,9 +17,7 @@ def wallet(user) -> Wallet:
 
 @pytest.fixture
 def wallet_eur(user) -> Wallet:
-    """
-    Wallet factory for EUR.
-    """
+    """Return a EUR wallet owned by the default user."""
     return baker.make(
         Wallet,
         user=user,
@@ -57,9 +28,7 @@ def wallet_eur(user) -> Wallet:
 
 @pytest.fixture
 def receiver_wallet(other_user) -> Wallet:
-    """
-    Receiver wallet factory.
-    """
+    """Return a USD wallet owned by the secondary user."""
     return baker.make(
         Wallet,
         user=other_user,
