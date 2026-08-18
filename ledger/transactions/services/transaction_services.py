@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import NotFound, ValidationError
 
 from ledger.accounts.models import User
+from ledger.core.exceptions import ApplicationError
 from ledger.transactions.models import TransactionLedger
 from ledger.transactions.selectors.transaction_selectors import (
     get_transaction_by_idempotency_key,
@@ -117,6 +118,23 @@ def _lock_wallet_by_id(*, wallet_id: int) -> Wallet:
         raise NotFound from exc
 
 
+def _ensure_sufficient_balance(*, wallet: Wallet, amount: Decimal) -> None:
+    """Ensure a wallet has enough balance for a debit.
+
+    Args:
+        wallet (Wallet): Wallet being debited.
+        amount (Decimal): Amount to deduct.
+
+    Raises:
+        ApplicationError: When the wallet balance is insufficient.
+    """
+    if wallet.balance < amount:
+        raise ApplicationError(
+            _("Insufficient balance."),
+            code="insufficient_balance",
+        )
+
+
 def _increase_wallet_balance(*, wallet_id: int, amount: Decimal) -> None:
     """Atomically increase a wallet balance.
 
@@ -125,6 +143,16 @@ def _increase_wallet_balance(*, wallet_id: int, amount: Decimal) -> None:
         amount (Decimal): Amount to add.
     """
     Wallet.objects.filter(id=wallet_id).update(balance=F("balance") + amount)
+
+
+def _decrease_wallet_balance(*, wallet_id: int, amount: Decimal) -> None:
+    """Atomically decrease a wallet balance.
+
+    Args:
+        wallet_id (int): Wallet primary key.
+        amount (Decimal): Amount to subtract.
+    """
+    Wallet.objects.filter(id=wallet_id).update(balance=F("balance") - amount)
 
 
 def create_transaction_ledger(
@@ -210,6 +238,60 @@ def credit_increase(
             description=description,
         )
         _increase_wallet_balance(wallet_id=wallet_id, amount=amount)
+        return ledger_entry, False
+    except IntegrityError as exc:
+        return _handle_idempotency_integrity_error(
+            idempotency_key=idempotency_key,
+            exc=exc,
+        )
+
+
+@transaction.atomic
+def credit_decrease(
+    *, user: User, wallet_id: int, data: dict
+) -> tuple[TransactionLedger, bool]:
+    """Debit a wallet and record a withdrawal transaction.
+
+    Args:
+        user (User): Owner of the wallet being debited.
+        wallet_id (int): Primary key of the target wallet.
+        data (dict): Validated payload with ``amount``, ``idempotency_key``, and
+            optional ``description``.
+
+    Returns:
+        tuple[TransactionLedger, bool]: Created or existing transaction and
+            whether the record already existed.
+
+    Raises:
+        NotFound: When the wallet does not belong to the user.
+        ValidationError: When the amount is invalid.
+        ApplicationError: When the wallet balance is insufficient.
+    """
+    _ensure_wallet_owned_by_user(user=user, wallet_id=wallet_id)
+
+    idempotency_key = data["idempotency_key"]
+    idempotent_result = _resolve_idempotent_transaction(
+        idempotency_key=idempotency_key
+    )
+    if idempotent_result is not None:
+        return idempotent_result
+
+    amount = data["amount"]
+    description = data.get("description", "")
+    _validate_amount(amount=amount)
+
+    try:
+        wallet = _lock_wallet_by_id(wallet_id=wallet_id)
+        _ensure_sufficient_balance(wallet=wallet, amount=amount)
+        ledger_entry = create_transaction_ledger(
+            idempotency_key=idempotency_key,
+            transaction_type=TransactionLedger.TransactionType.WITHDRAWAL,
+            amount=amount,
+            currency=wallet.currency,
+            sender_wallet=wallet,
+            description=description,
+        )
+        _decrease_wallet_balance(wallet_id=wallet_id, amount=amount)
         return ledger_entry, False
     except IntegrityError as exc:
         return _handle_idempotency_integrity_error(
