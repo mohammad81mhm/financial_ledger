@@ -8,6 +8,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 
 from ledger.accounts.models import User
 from ledger.core.exceptions import ApplicationError
+from ledger.notifications.services import notify_transfer_received
 from ledger.transactions.constants import MONITORING_THRESHOLD
 from ledger.transactions.models import TransactionLedger
 from ledger.transactions.selectors.transaction_selectors import (
@@ -409,6 +410,9 @@ def transfer_between_wallets(
         _decrease_wallet_balance(wallet_id=sender_wallet_id, amount=amount)
         _increase_wallet_balance(wallet_id=receiver_wallet_id, amount=amount)
         _schedule_monitoring_if_needed(ledger_entry=ledger_entry, amount=amount)
+        transaction.on_commit(
+            lambda: notify_transfer_received(ledger_entry=ledger_entry)
+        )
         return ledger_entry, False
     except IntegrityError as exc:
         return _handle_idempotency_integrity_error(

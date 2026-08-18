@@ -1,11 +1,14 @@
+"""Shared pytest plugins and fixtures for the test suite."""
+
 from uuid import uuid4
 
 import pytest
-from model_bakery import baker
 from rest_framework.test import APIClient
 
 from ledger.accounts.models import User
 from ledger.accounts.services import create_user
+
+pytest_plugins = ["tests.transactions.conftest"]
 
 
 @pytest.fixture

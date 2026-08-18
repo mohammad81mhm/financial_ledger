@@ -1,0 +1,1 @@
+"""WebSocket notification payload schemas."""
