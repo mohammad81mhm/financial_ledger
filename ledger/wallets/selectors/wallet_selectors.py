@@ -27,3 +27,28 @@ def get_wallet_by_user_and_currency(*, user: User, currency: str) -> QuerySet[Wa
         QuerySet[Wallet]: Queryset with zero or one row.
     """
     return Wallet.objects.filter(user=user, currency=currency)
+
+
+def get_wallet_by_id(*, wallet_id: int) -> QuerySet[Wallet]:
+    """Return wallets filtered by primary key.
+
+    Args:
+        wallet_id (int): Wallet primary key.
+
+    Returns:
+        QuerySet[Wallet]: Queryset with zero or one row.
+    """
+    return Wallet.objects.filter(id=wallet_id)
+
+
+def get_wallet_for_user_by_id(*, user: User, wallet_id: int) -> QuerySet[Wallet]:
+    """Return wallets filtered by owner and primary key.
+
+    Args:
+        user (User): Wallet owner.
+        wallet_id (int): Wallet primary key.
+
+    Returns:
+        QuerySet[Wallet]: Queryset with zero or one row.
+    """
+    return Wallet.objects.filter(id=wallet_id, user=user)
