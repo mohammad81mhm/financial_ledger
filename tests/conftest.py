@@ -1,5 +1,6 @@
 """Shared pytest plugins and fixtures for the test suite."""
 
+import random
 from uuid import uuid4
 
 import pytest
@@ -33,10 +34,10 @@ def user_data() -> dict:
     """Return valid input data for creating a user."""
     return {
         "username": "wallet_user",
-        "password": "SecurePass1",
+        "password": "Secure@Pass1",
         "first_name": "Wallet",
         "last_name": "User",
-        "phone_number": "10000000001",
+        "phone_number": "09121234567",
     }
 
 
@@ -45,10 +46,10 @@ def other_user_data() -> dict:
     """Return valid input data for creating a second user."""
     return {
         "username": "other_user",
-        "password": "SecurePass1",
+        "password": "Secure@Pass1",
         "first_name": "Other",
         "last_name": "User",
-        "phone_number": "10000000002",
+        "phone_number": "09129876543",
     }
 
 
@@ -70,10 +71,10 @@ def register_payload() -> dict:
     suffix = uuid4().hex[:8]
     return {
         "username": f"register_user_{suffix}",
-        "password": "SecurePass1",
+        "password": "Secure@Pass1",
         "first_name": "Register",
         "last_name": "User",
-        "phone_number": f"100{suffix}0000"[:20],
+        "phone_number": f"0913{random.randint(1000000, 9999999)}",
     }
 
 
