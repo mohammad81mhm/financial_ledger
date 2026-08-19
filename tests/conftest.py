@@ -8,7 +8,10 @@ from rest_framework.test import APIClient
 from ledger.accounts.models import User
 from ledger.accounts.services import create_user
 
-pytest_plugins = ["tests.transactions.conftest"]
+pytest_plugins = [
+    "tests.transactions.conftest",
+    "tests.wallets.conftest",
+]
 
 
 @pytest.fixture
