@@ -9,6 +9,8 @@ from ledger.core.models import BaseModel
 class User(AbstractUser, BaseModel):
     """Application user with a phone number in addition to Django auth fields."""
 
+    email = None  # unused; remove the inherited varchar(254) column
+
     username = models.CharField(
         max_length=150,
         unique=True,
