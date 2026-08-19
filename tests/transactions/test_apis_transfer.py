@@ -35,6 +35,8 @@ class TestTransferApi:
         assert response.status_code == status.HTTP_201_CREATED
         result = response.json()["result"]
         assert result["amount"] == 100
+        assert result["sender_wallet"]["balance"] == 900
+        assert result["receiver_wallet"]["balance"] == 300
 
     def test_idempotent_retry_returns_200(
         self, authenticated_api_client, transfer_url, wallet, receiver_wallet

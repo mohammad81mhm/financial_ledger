@@ -45,6 +45,24 @@ def _get_existing_idempotent(*, idempotency_key: UUID) -> TransactionLedger | No
     ).first()
 
 
+def _reload_ledger_entry(*, ledger_entry: TransactionLedger) -> TransactionLedger:
+    """Reload a ledger entry with fresh related wallet rows.
+
+    We update wallet balances via queryset ``update(F(...)+amount)`` which
+    does not mutate the in-memory ``Wallet`` instances attached to the
+    transaction. Reloading ensures API responses include the updated
+    `wallet.balance` values for sender/receiver.
+    """
+
+    return (
+        TransactionLedger.objects.select_related(
+            "sender_wallet",
+            "receiver_wallet",
+        )
+        .get(pk=ledger_entry.pk)
+    )
+
+
 def _resolve_idempotent_transaction(
     *, idempotency_key: UUID
 ) -> tuple[TransactionLedger, bool] | None:
@@ -60,7 +78,7 @@ def _resolve_idempotent_transaction(
     existing = _get_existing_idempotent(idempotency_key=idempotency_key)
     if existing is None:
         return None
-    return existing, True
+    return _reload_ledger_entry(ledger_entry=existing), True
 
 
 def _handle_idempotency_integrity_error(
@@ -81,7 +99,7 @@ def _handle_idempotency_integrity_error(
     existing = _get_existing_idempotent(idempotency_key=idempotency_key)
     if existing is None:
         raise exc
-    return existing, True
+    return _reload_ledger_entry(ledger_entry=existing), True
 
 
 def _ensure_wallet_owned_by_user(*, user: User, wallet_id: int) -> None:
@@ -256,7 +274,7 @@ def credit_increase(
         return idempotent_result
 
     amount = data["amount"]
-    description = data.get("description", "")
+    description = data.get("description")
     _validate_amount(amount=amount)
 
     try:
@@ -270,7 +288,7 @@ def credit_increase(
             description=description,
         )
         _increase_wallet_balance(wallet_id=wallet_id, amount=amount)
-        return ledger_entry, False
+        return _reload_ledger_entry(ledger_entry=ledger_entry), False
     except IntegrityError as exc:
         return _handle_idempotency_integrity_error(
             idempotency_key=idempotency_key,
@@ -309,7 +327,7 @@ def credit_decrease(
         return idempotent_result
 
     amount = data["amount"]
-    description = data.get("description", "")
+    description = data.get("description")
     _validate_amount(amount=amount)
 
     try:
@@ -324,7 +342,7 @@ def credit_decrease(
             description=description,
         )
         _decrease_wallet_balance(wallet_id=wallet_id, amount=amount)
-        return ledger_entry, False
+        return _reload_ledger_entry(ledger_entry=ledger_entry), False
     except IntegrityError as exc:
         return _handle_idempotency_integrity_error(
             idempotency_key=idempotency_key,
@@ -367,7 +385,7 @@ def transfer_between_wallets(
         return idempotent_result
 
     amount = data["amount"]
-    description = data.get("description", "")
+    description = data.get("description")
     _validate_amount(amount=amount)
 
     if sender_wallet_id == receiver_wallet_id:
@@ -408,7 +426,7 @@ def transfer_between_wallets(
         transaction.on_commit(
             lambda: notify_transfer_received(ledger_entry=ledger_entry)
         )
-        return ledger_entry, False
+        return _reload_ledger_entry(ledger_entry=ledger_entry), False
     except IntegrityError as exc:
         return _handle_idempotency_integrity_error(
             idempotency_key=idempotency_key,
