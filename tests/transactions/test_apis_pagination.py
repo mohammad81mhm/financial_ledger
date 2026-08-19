@@ -1,8 +1,7 @@
-"""Tests for pagination on list endpoints."""
-
 from uuid import uuid4
 
 import pytest
+from django.conf import settings
 from rest_framework import status
 
 from ledger.transactions.services import credit_increase
@@ -30,6 +29,38 @@ class TestTransactionListPagination:
         assert result["count"] == 3
         assert len(result["results"]) == 2
         assert result["next"] is not None
+
+    def test_rejects_page_size_above_max(
+        self, authenticated_api_client, transaction_list_url
+    ):
+        """sad path: page_size above MAX_PAGE_SIZE returns 400."""
+        max_page_size = settings.REST_FRAMEWORK["MAX_PAGE_SIZE"]
+
+        response = authenticated_api_client.get(
+            transaction_list_url,
+            {"page_size": max_page_size + 1},
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_uses_default_page_size(
+        self, authenticated_api_client, transaction_list_url, user, wallet
+    ):
+        """happy path: omitting page_size uses the configured default."""
+        default_page_size = settings.REST_FRAMEWORK["PAGE_SIZE"]
+        for _ in range(default_page_size + 1):
+            credit_increase(
+                user=user,
+                wallet_id=wallet.id,
+                data={"amount": 5, "idempotency_key": uuid4()},
+            )
+
+        response = authenticated_api_client.get(transaction_list_url)
+
+        assert response.status_code == status.HTTP_200_OK
+        result = response.json()["result"]
+        assert result["count"] == default_page_size + 1
+        assert len(result["results"]) == default_page_size
 
     def test_second_page_returns_remaining(
         self, authenticated_api_client, transaction_list_url, user, wallet

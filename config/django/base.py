@@ -16,6 +16,7 @@ from config.settings.auth import *  # noqa
 from config.settings.i18n import *  # noqa
 from config.settings.static import *  # noqa
 from config.settings.drf import *  # noqa
+from config.settings.jwt import *  # noqa
 from config.settings.cors import *  # noqa
 from config.settings.swagger import *  # noqa
 from config.settings.database import *  # noqa

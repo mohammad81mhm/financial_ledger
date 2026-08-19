@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework.pagination import PageNumberPagination as _PageNumberPagination
+from rest_framework.settings import api_settings
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
@@ -11,6 +13,8 @@ class PageNumberPagination(_PageNumberPagination):
 
     page_query_param = "p"
     page_size_query_param = "page_size"
+    page_size = api_settings.PAGE_SIZE
+    max_page_size = settings.REST_FRAMEWORK["MAX_PAGE_SIZE"]
 
 
 def get_paginated_response_context(
