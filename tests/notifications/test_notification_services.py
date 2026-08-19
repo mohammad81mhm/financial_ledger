@@ -1,6 +1,5 @@
 """Unit tests for ledger.notifications.services."""
 
-from decimal import Decimal
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -19,14 +18,14 @@ class TestNotifyTransferReceived:
 
     def test_sends_notification_to_receiver_channel(self, user, other_user):
         """happy path: sends a transfer notification to the receiver's channel group."""
-        sender_wallet = baker.make(Wallet, user=user, currency="USD", balance="500.00")
-        receiver_wallet = baker.make(Wallet, user=other_user, currency="USD", balance="100.00")
+        sender_wallet = baker.make(Wallet, user=user, currency="USD", balance=500)
+        receiver_wallet = baker.make(Wallet, user=other_user, currency="USD", balance=100)
         ledger_entry = baker.make(
             TransactionLedger,
             idempotency_key=uuid4(),
             transaction_type=TransactionLedger.TransactionType.TRANSFER,
             status=TransactionLedger.Status.COMPLETED,
-            amount=Decimal("75.00"),
+            amount=75,
             currency="USD",
             sender_wallet=sender_wallet,
             receiver_wallet=receiver_wallet,
@@ -51,7 +50,7 @@ class TestNotifyTransferReceived:
             assert event["type"] == "transfer.received"
             payload = event["payload"]
             assert payload["sender_username"] == user.username
-            assert payload["amount"] == "75.00"
+            assert payload["amount"] == 75
             assert payload["currency"] == "USD"
             assert payload["wallet_id"] == receiver_wallet.id
 
@@ -63,7 +62,7 @@ class TestNotifyTransferReceived:
             idempotency_key=uuid4(),
             transaction_type=TransactionLedger.TransactionType.WITHDRAWAL,
             status=TransactionLedger.Status.COMPLETED,
-            amount=Decimal("10.00"),
+            amount=10,
             currency="USD",
             sender_wallet=sender_wallet,
             receiver_wallet=None,
@@ -83,7 +82,7 @@ class TestNotifyTransferReceived:
             idempotency_key=uuid4(),
             transaction_type=TransactionLedger.TransactionType.DEPOSIT,
             status=TransactionLedger.Status.COMPLETED,
-            amount=Decimal("10.00"),
+            amount=10,
             currency="USD",
             sender_wallet=None,
             receiver_wallet=receiver_wallet,

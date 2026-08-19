@@ -1,6 +1,5 @@
 """Tests for pagination on list endpoints."""
 
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -21,7 +20,7 @@ class TestTransactionListPagination:
             credit_increase(
                 user=user,
                 wallet_id=wallet.id,
-                data={"amount": Decimal("5.00"), "idempotency_key": uuid4()},
+                data={"amount": 5, "idempotency_key": uuid4()},
             )
 
         response = authenticated_api_client.get(transaction_list_url, {"page_size": 2})
@@ -40,7 +39,7 @@ class TestTransactionListPagination:
             credit_increase(
                 user=user,
                 wallet_id=wallet.id,
-                data={"amount": Decimal("5.00"), "idempotency_key": uuid4()},
+                data={"amount": 5, "idempotency_key": uuid4()},
             )
 
         response = authenticated_api_client.get(

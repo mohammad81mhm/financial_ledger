@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.db import IntegrityError, transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
@@ -25,12 +23,12 @@ def create_wallet(*, user: User, data: dict) -> Wallet:
             the currency is invalid, or a database constraint is violated.
     """
     currency = data["currency"]
-    initial_balance = data.get("initial_balance", Decimal("0.00"))
+    initial_balance = data.get("initial_balance", 0)
     valid_currencies = {choice.value for choice in Wallet.Currency}
     if currency not in valid_currencies:
         raise ValidationError(_("Invalid currency."))
 
-    if initial_balance < Decimal("0.00"):
+    if initial_balance < 0:
         raise ValidationError(_("Initial balance cannot be negative."))
 
     if get_wallet_by_user_and_currency(user=user, currency=currency).exists():

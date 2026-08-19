@@ -1,4 +1,3 @@
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -109,7 +108,7 @@ async def test_transfer_notifies_receiver_over_websocket(
             data={
                 "sender_wallet_id": wallet.id,
                 "receiver_wallet_id": receiver_wallet.id,
-                "amount": Decimal("25.50"),
+                "amount": 25,
                 "idempotency_key": uuid4(),
             },
         )
@@ -117,7 +116,7 @@ async def test_transfer_notifies_receiver_over_websocket(
         response = await communicator.receive_json_from()
         assert response["type"] == MESSAGE_TYPE_TRANSFER_RECEIVED
         assert response["sender_username"] == user.username
-        assert response["amount"] == "25.50"
+        assert response["amount"] == 25
         assert response["currency"] == receiver_wallet.currency
         assert response["wallet_id"] == receiver_wallet.id
         assert response["transaction_id"]

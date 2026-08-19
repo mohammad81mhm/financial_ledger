@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -28,12 +26,10 @@ class Wallet(BaseModel):
         verbose_name=_("Currency"),
         help_text="Currency code for this wallet, such as USD, EUR, or IRR.",
     )
-    balance = models.DecimalField(
-        max_digits=20,
-        decimal_places=2,
-        default=Decimal("0.00"),
+    balance = models.BigIntegerField(
+        default=0,
         verbose_name=_("Balance"),
-        help_text="Current wallet balance in the selected currency.",
+        help_text="Current wallet balance in whole units of the selected currency.",
     )
 
     class Meta:

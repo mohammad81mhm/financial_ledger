@@ -1,4 +1,3 @@
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -15,7 +14,7 @@ def test_transfer_between_wallets_updates_both_balances(user, wallet, receiver_w
     data = {
         "sender_wallet_id": wallet.id,
         "receiver_wallet_id": receiver_wallet.id,
-        "amount": Decimal("300.00"),
+        "amount": 300,
         "idempotency_key": uuid4(),
     }
 
@@ -29,8 +28,8 @@ def test_transfer_between_wallets_updates_both_balances(user, wallet, receiver_w
 
     assert is_duplicate is False
     assert ledger_entry.transaction_type == TransactionLedger.TransactionType.TRANSFER
-    assert wallet.balance == Decimal("700.00")
-    assert receiver_wallet.balance == Decimal("500.00")
+    assert wallet.balance == 700
+    assert receiver_wallet.balance == 500
 
 
 @pytest.mark.django_db
@@ -39,7 +38,7 @@ def test_transfer_between_wallets_rejects_currency_mismatch(user, wallet, wallet
     data = {
         "sender_wallet_id": wallet.id,
         "receiver_wallet_id": wallet_eur.id,
-        "amount": Decimal("50.00"),
+        "amount": 50,
         "idempotency_key": uuid4(),
     }
 
@@ -58,7 +57,7 @@ def test_transfer_between_wallets_rejects_self_transfer(user, wallet):
     data = {
         "sender_wallet_id": wallet.id,
         "receiver_wallet_id": wallet.id,
-        "amount": Decimal("50.00"),
+        "amount": 50,
         "idempotency_key": uuid4(),
     }
 

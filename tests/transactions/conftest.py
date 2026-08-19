@@ -40,7 +40,7 @@ def wallet(user) -> Wallet:
         Wallet,
         user=user,
         currency=Wallet.Currency.USD,
-        balance="1000.00",
+        balance=1000,
     )
 
 
@@ -51,7 +51,7 @@ def wallet_eur(user) -> Wallet:
         Wallet,
         user=user,
         currency=Wallet.Currency.EUR,
-        balance="500.00",
+        balance=500,
     )
 
 
@@ -62,5 +62,5 @@ def receiver_wallet(other_user) -> Wallet:
         Wallet,
         user=other_user,
         currency=Wallet.Currency.USD,
-        balance="200.00",
+        balance=200,
     )

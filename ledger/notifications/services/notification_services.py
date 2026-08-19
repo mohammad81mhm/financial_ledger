@@ -1,7 +1,5 @@
 """Services for pushing real-time WebSocket notifications."""
 
-from decimal import Decimal
-
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
@@ -35,7 +33,7 @@ def notify_transfer_received(*, ledger_entry: TransactionLedger) -> None:
 
     notification = TransferReceivedNotification(
         sender_username=sender_wallet.user.username,
-        amount=f"{ledger_entry.amount.quantize(Decimal('0.01'))}",
+        amount=int(ledger_entry.amount),
         currency=ledger_entry.currency,
         wallet_id=receiver_wallet.id,
         transaction_id=str(ledger_entry.id),

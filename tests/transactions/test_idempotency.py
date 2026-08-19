@@ -1,4 +1,3 @@
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -11,7 +10,7 @@ def test_credit_increase_idempotency_returns_existing_transaction(user, wallet):
     """happy path: repeated credit increase requests return the original transaction."""
     idempotency_key = uuid4()
     data = {
-        "amount": Decimal("75.00"),
+        "amount": 75,
         "idempotency_key": idempotency_key,
     }
 
@@ -31,7 +30,7 @@ def test_credit_increase_idempotency_returns_existing_transaction(user, wallet):
     assert first_duplicate is False
     assert second_duplicate is True
     assert first_entry.id == second_entry.id
-    assert wallet.balance == Decimal("1075.00")
+    assert wallet.balance == 1075
 
 
 @pytest.mark.django_db
@@ -41,7 +40,7 @@ def test_transfer_idempotency_returns_existing_transaction(user, wallet, receive
     data = {
         "sender_wallet_id": wallet.id,
         "receiver_wallet_id": receiver_wallet.id,
-        "amount": Decimal("40.00"),
+        "amount": 40,
         "idempotency_key": idempotency_key,
     }
 
@@ -60,5 +59,5 @@ def test_transfer_idempotency_returns_existing_transaction(user, wallet, receive
     assert first_duplicate is False
     assert second_duplicate is True
     assert first_entry.id == second_entry.id
-    assert wallet.balance == Decimal("960.00")
-    assert receiver_wallet.balance == Decimal("240.00")
+    assert wallet.balance == 960
+    assert receiver_wallet.balance == 240

@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from rest_framework import serializers
 
 from ledger.transactions.apis.wallets.credit_increase.credit_increase_serializers import (
@@ -16,11 +14,9 @@ class TransferInputSerializer(serializers.Serializer):
     receiver_wallet_id = serializers.IntegerField(
         help_text="Primary key of the wallet to credit.",
     )
-    amount = serializers.DecimalField(
-        max_digits=20,
-        decimal_places=2,
-        min_value=Decimal("0.01"),
-        help_text="Amount to transfer between the two wallets.",
+    amount = serializers.IntegerField(
+        min_value=1,
+        help_text="Amount to transfer between the two wallets in whole units.",
     )
     idempotency_key = serializers.UUIDField(
         help_text="Unique key used to safely retry this transfer request.",

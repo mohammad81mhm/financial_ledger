@@ -49,11 +49,9 @@ class TransactionLedger(BaseModel):
         verbose_name=_("Status"),
         help_text="Processing status of this transaction.",
     )
-    amount = models.DecimalField(
-        max_digits=20,
-        decimal_places=8,
+    amount = models.BigIntegerField(
         verbose_name=_("Amount"),
-        help_text="Transaction amount in the wallet currency.",
+        help_text="Transaction amount in whole units of the wallet currency.",
     )
     currency = models.CharField(
         max_length=3,

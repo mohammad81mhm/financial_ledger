@@ -14,7 +14,7 @@ class TransferReceivedNotification:
     """
 
     sender_username: str
-    amount: str
+    amount: int
     currency: str
     wallet_id: int
     transaction_id: str

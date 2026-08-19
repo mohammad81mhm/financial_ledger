@@ -1,4 +1,3 @@
-from decimal import Decimal
 from uuid import UUID
 
 from django.db import IntegrityError, transaction
@@ -19,21 +18,17 @@ from ledger.wallets.models import Wallet
 from ledger.wallets.selectors.wallet_selectors import get_wallet_for_user_by_id
 
 
-def _validate_amount(*, amount: Decimal) -> None:
-    """Validate that an amount is positive and limited to two decimal places.
+def _validate_amount(*, amount: int) -> None:
+    """Validate that an amount is a positive integer.
 
     Args:
-        amount (Decimal): Amount supplied by the client.
+        amount (int): Amount supplied by the client.
 
     Raises:
-        ValidationError: When the amount is zero, negative, or too precise.
+        ValidationError: When the amount is zero or negative.
     """
-    if amount <= Decimal("0.00"):
+    if amount <= 0:
         raise ValidationError(_("Amount must be greater than zero."))
-
-    quantized = amount.quantize(Decimal("0.01"))
-    if amount != quantized:
-        raise ValidationError(_("Amount cannot have more than 2 decimal places."))
 
 
 def _get_existing_idempotent(*, idempotency_key: UUID) -> TransactionLedger | None:
@@ -138,12 +133,12 @@ def _lock_wallets(*, wallet_ids: list[int]) -> list[Wallet]:
     )
 
 
-def _ensure_sufficient_balance(*, wallet: Wallet, amount: Decimal) -> None:
+def _ensure_sufficient_balance(*, wallet: Wallet, amount: int) -> None:
     """Ensure a wallet has enough balance for a debit.
 
     Args:
         wallet (Wallet): Wallet being debited.
-        amount (Decimal): Amount to deduct.
+        amount (int): Amount to deduct.
 
     Raises:
         ApplicationError: When the wallet balance is insufficient.
@@ -155,22 +150,22 @@ def _ensure_sufficient_balance(*, wallet: Wallet, amount: Decimal) -> None:
         )
 
 
-def _increase_wallet_balance(*, wallet_id: int, amount: Decimal) -> None:
+def _increase_wallet_balance(*, wallet_id: int, amount: int) -> None:
     """Atomically increase a wallet balance.
 
     Args:
         wallet_id (int): Wallet primary key.
-        amount (Decimal): Amount to add.
+        amount (int): Amount to add.
     """
     Wallet.objects.filter(id=wallet_id).update(balance=F("balance") + amount)
 
 
-def _decrease_wallet_balance(*, wallet_id: int, amount: Decimal) -> None:
+def _decrease_wallet_balance(*, wallet_id: int, amount: int) -> None:
     """Atomically decrease a wallet balance.
 
     Args:
         wallet_id (int): Wallet primary key.
-        amount (Decimal): Amount to subtract.
+        amount (int): Amount to subtract.
     """
     Wallet.objects.filter(id=wallet_id).update(balance=F("balance") - amount)
 
@@ -179,7 +174,7 @@ def create_transaction_ledger(
     *,
     idempotency_key: UUID,
     transaction_type: str,
-    amount: Decimal,
+    amount: int,
     currency: str,
     description: str,
     sender_wallet: Wallet | None = None,
@@ -215,13 +210,13 @@ def create_transaction_ledger(
 
 
 def _schedule_monitoring_if_needed(
-    *, ledger_entry: TransactionLedger, amount: Decimal
+    *, ledger_entry: TransactionLedger, amount: int
 ) -> None:
     """Schedule a monitoring alert after commit for high-value transfers.
 
     Args:
         ledger_entry (TransactionLedger): Completed transfer transaction.
-        amount (Decimal): Transfer amount.
+        amount (int): Transfer amount.
     """
     if amount <= MONITORING_THRESHOLD:
         return

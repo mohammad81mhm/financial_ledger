@@ -1,6 +1,5 @@
 """Tests for GET /api/transactions/{transaction_id}/ (TransactionDetailApi)."""
 
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -22,7 +21,7 @@ class TestTransactionDetailApi:
             user=user,
             wallet_id=wallet.id,
             data={
-                "amount": Decimal("50.00"),
+                "amount": 50,
                 "idempotency_key": uuid4(),
             },
         )
@@ -35,7 +34,7 @@ class TestTransactionDetailApi:
         result = response.json()["result"]
         assert result["id"] == str(ledger_entry.id)
         assert result["transaction_type"] == TransactionLedger.TransactionType.DEPOSIT
-        assert Decimal(result["amount"]) == Decimal("50.00")
+        assert result["amount"] == 50
 
     def test_returns_404_for_nonexistent_transaction(
         self, authenticated_api_client, transaction_detail_url

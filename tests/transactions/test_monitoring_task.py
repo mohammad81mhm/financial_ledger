@@ -1,4 +1,3 @@
-from decimal import Decimal
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -10,7 +9,7 @@ from ledger.transactions.services import transfer_between_wallets
 @pytest.mark.django_db
 def test_high_value_transfer_triggers_monitoring_task(user, wallet, receiver_wallet):
     """happy path: high-value transfers schedule a monitoring task after commit."""
-    wallet.balance = Decimal("20000.00")
+    wallet.balance = 20000
     wallet.save(update_fields=["balance"])
 
     with patch(
@@ -24,7 +23,7 @@ def test_high_value_transfer_triggers_monitoring_task(user, wallet, receiver_wal
             data={
                 "sender_wallet_id": wallet.id,
                 "receiver_wallet_id": receiver_wallet.id,
-                "amount": Decimal("15000.00"),
+                "amount": 15000,
                 "idempotency_key": uuid4(),
             },
         )
