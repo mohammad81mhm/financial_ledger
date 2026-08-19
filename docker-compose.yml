@@ -14,12 +14,13 @@
 name: financial-ledger
 
 x-celery-env: &celery-env
-  CELERY_BROKER_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:${RABBITMQ_PORT}//
+  CELERY_BROKER_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_PORT}//
 
 services:
   db:
     image: postgres:14-alpine
     container_name: financial_ledger_db
+    hostname: financial_ledger_db
     restart: unless-stopped
     env_file:
       - .env
@@ -36,6 +37,7 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: financial_ledger_redis
+    hostname: financial_ledger_redis
     restart: unless-stopped
     env_file:
       - .env
@@ -54,6 +56,7 @@ services:
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: financial_ledger_rabbitmq
+    hostname: financial_ledger_rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
@@ -73,14 +76,15 @@ services:
   api:
     build: .
     container_name: financial_ledger_api
+    hostname: financial_ledger_api
     restart: unless-stopped
     env_file:
       - .env
     environment:
       <<: *celery-env
-      POSTGRES_HOST: db
-      HOST_REDIS: redis
-      RABBITMQ_HOST: rabbitmq
+      POSTGRES_HOST: financial_ledger_db
+      HOST_REDIS: financial_ledger_redis
+      RABBITMQ_HOST: financial_ledger_rabbitmq
     depends_on:
       db:
         condition: service_healthy
@@ -97,14 +101,15 @@ services:
   celery_worker:
     build: .
     container_name: financial_ledger_celery_worker
+    hostname: financial_ledger_celery_worker
     restart: unless-stopped
     env_file:
       - .env
     environment:
       <<: *celery-env
-      POSTGRES_HOST: db
-      HOST_REDIS: redis
-      RABBITMQ_HOST: rabbitmq
+      POSTGRES_HOST: financial_ledger_db
+      HOST_REDIS: financial_ledger_redis
+      RABBITMQ_HOST: financial_ledger_rabbitmq
     depends_on:
       db:
         condition: service_healthy
@@ -121,13 +126,14 @@ services:
   flower:
     build: .
     container_name: financial_ledger_flower
+    hostname: financial_ledger_flower
     restart: unless-stopped
     env_file:
       - .env
     environment:
       <<: *celery-env
       FLOWER_BASIC_AUTH: ${FLOWER_USER}:${FLOWER_PASSWORD}
-      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_HOST: financial_ledger_rabbitmq
     depends_on:
       rabbitmq:
         condition: service_healthy
