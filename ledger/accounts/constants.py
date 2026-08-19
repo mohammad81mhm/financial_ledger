@@ -4,7 +4,7 @@
 
 SUPERUSER_DATA = {
     "username": "admin",
-    "password": "Ledger!Pass2026",
+    "password": "admin123",
     "first_name": "Admin",
     "last_name": "Ledger",
     "phone_number": "09000000000",
