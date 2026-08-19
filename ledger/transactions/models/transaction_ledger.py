@@ -33,7 +33,6 @@ class TransactionLedger(BaseModel):
     )
     idempotency_key = models.UUIDField(
         unique=True,
-        db_index=True,
         verbose_name=_("Idempotency key"),
         help_text="Client-supplied key that guarantees at-most-once processing.",
     )
@@ -92,8 +91,6 @@ class TransactionLedger(BaseModel):
         verbose_name_plural = _("transaction ledger entries")
         indexes = [
             models.Index(fields=["status"]),
-            models.Index(fields=["sender_wallet"]),
-            models.Index(fields=["receiver_wallet"]),
         ]
 
     def __str__(self) -> str:
