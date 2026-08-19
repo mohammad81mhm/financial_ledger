@@ -1,6 +1,5 @@
 """Tests for wallet API endpoints."""
 
-from decimal import Decimal
 
 import pytest
 from rest_framework import status
@@ -24,7 +23,7 @@ class TestWalletDefineApi:
         assert response.status_code == status.HTTP_201_CREATED
         result = response.json()["result"]
         assert result["currency"] == "USD"
-        assert Decimal(result["balance"]) == Decimal("50.00")
+        assert result["balance"] == 50
 
     def test_creates_wallet_without_initial_balance(
         self, authenticated_api_client, wallet_define_url
@@ -37,7 +36,7 @@ class TestWalletDefineApi:
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert Decimal(response.json()["result"]["balance"]) == Decimal("0.00")
+        assert response.json()["result"]["balance"] == 0
 
     def test_rejects_duplicate_currency(
         self, authenticated_api_client, wallet_define_url, usd_wallet

@@ -1,5 +1,4 @@
 from concurrent.futures import ThreadPoolExecutor
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -19,7 +18,7 @@ def test_concurrent_credit_decreases_prevent_double_spending(user, wallet):
                 user=user,
                 wallet_id=wallet.id,
                 data={
-                    "amount": Decimal("600.00"),
+                    "amount": 600,
                     "idempotency_key": uuid4(),
                 },
             )
@@ -34,4 +33,4 @@ def test_concurrent_credit_decreases_prevent_double_spending(user, wallet):
     wallet.refresh_from_db()
 
     assert len(barrier_errors) == 1
-    assert wallet.balance == Decimal("400.00")
+    assert wallet.balance == 400

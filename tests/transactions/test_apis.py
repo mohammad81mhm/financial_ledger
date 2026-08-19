@@ -1,4 +1,3 @@
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -63,7 +62,7 @@ class TestTransactionListApi:
             user=user,
             wallet_id=wallet.id,
             data={
-                "amount": Decimal("15.00"),
+                "amount": 15,
                 "idempotency_key": uuid4(),
             },
         )
@@ -91,7 +90,7 @@ class TestTransactionDetailApi:
             user=other_user,
             wallet_id=receiver_wallet.id,
             data={
-                "amount": Decimal("10.00"),
+                "amount": 10,
                 "idempotency_key": uuid4(),
             },
         )

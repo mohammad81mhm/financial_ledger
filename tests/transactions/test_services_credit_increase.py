@@ -1,4 +1,3 @@
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -13,7 +12,7 @@ def test_credit_increase_increases_balance(user, wallet):
     """happy path: credit increase adds funds and records a completed deposit."""
     idempotency_key = uuid4()
     data = {
-        "amount": Decimal("250.50"),
+        "amount": 250,
         "idempotency_key": idempotency_key,
         "description": "Payroll deposit",
     }
@@ -31,14 +30,14 @@ def test_credit_increase_increases_balance(user, wallet):
     assert ledger_entry.status == TransactionLedger.Status.COMPLETED
     assert ledger_entry.receiver_wallet_id == wallet.id
     assert ledger_entry.sender_wallet is None
-    assert wallet.balance == Decimal("1250.50")
+    assert wallet.balance == 1250
 
 
 @pytest.mark.django_db
 def test_credit_increase_rejects_foreign_wallet(user, receiver_wallet):
     """sad path: credit increase fails when the wallet belongs to another user."""
     data = {
-        "amount": Decimal("10.00"),
+        "amount": 10,
         "idempotency_key": uuid4(),
     }
 
@@ -51,10 +50,10 @@ def test_credit_increase_rejects_foreign_wallet(user, receiver_wallet):
 
 
 @pytest.mark.django_db
-def test_credit_increase_rejects_extra_decimal_places(user, wallet):
-    """sad path: credit increase rejects amounts with more than two decimal places."""
+def test_credit_increase_rejects_zero_amount(user, wallet):
+    """sad path: credit increase rejects a zero amount."""
     data = {
-        "amount": Decimal("10.001"),
+        "amount": 0,
         "idempotency_key": uuid4(),
     }
 

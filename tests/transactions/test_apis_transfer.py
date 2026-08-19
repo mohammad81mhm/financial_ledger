@@ -1,6 +1,5 @@
 """Tests for POST /api/transfers/ (TransferApi)."""
 
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -35,7 +34,7 @@ class TestTransferApi:
 
         assert response.status_code == status.HTTP_201_CREATED
         result = response.json()["result"]
-        assert Decimal(result["amount"]) == Decimal("100.00")
+        assert result["amount"] == 100
 
     def test_idempotent_retry_returns_200(
         self, authenticated_api_client, transfer_url, wallet, receiver_wallet

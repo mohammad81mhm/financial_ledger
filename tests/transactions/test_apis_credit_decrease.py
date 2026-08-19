@@ -1,6 +1,5 @@
 """Tests for POST /api/transactions/wallets/{wallet_id}/credit-decrease/."""
 
-from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -37,7 +36,7 @@ class TestWalletCreditDecreaseApi:
 
         assert response.status_code == status.HTTP_201_CREATED
         result = response.json()["result"]
-        assert Decimal(result["amount"]) == Decimal("100.00")
+        assert result["amount"] == 100
 
     def test_idempotent_retry_returns_200(
         self, authenticated_api_client, credit_decrease_url

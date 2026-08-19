@@ -1,6 +1,5 @@
 """Tests for ledger.wallets.services."""
 
-from decimal import Decimal
 
 import pytest
 from rest_framework.exceptions import ValidationError
@@ -12,14 +11,14 @@ from ledger.wallets.services import create_wallet
 @pytest.mark.django_db
 def test_create_wallet_success(user):
     """happy path: create_wallet persists a wallet with the requested currency and balance."""
-    data = {"currency": "USD", "initial_balance": Decimal("100.00")}
+    data = {"currency": "USD", "initial_balance": 100}
 
     wallet = create_wallet(user=user, data=data)
 
     assert wallet.pk is not None
     assert wallet.user_id == user.id
     assert wallet.currency == Wallet.Currency.USD
-    assert wallet.balance == Decimal("100.00")
+    assert wallet.balance == 100
 
 
 @pytest.mark.django_db
@@ -29,7 +28,7 @@ def test_create_wallet_defaults_balance_to_zero(user):
 
     wallet = create_wallet(user=user, data=data)
 
-    assert wallet.balance == Decimal("0.00")
+    assert wallet.balance == 0
 
 
 @pytest.mark.django_db
@@ -53,7 +52,7 @@ def test_create_wallet_rejects_invalid_currency(user):
 @pytest.mark.django_db
 def test_create_wallet_rejects_negative_balance(user):
     """sad path: create_wallet rejects a negative initial balance."""
-    data = {"currency": "USD", "initial_balance": Decimal("-10.00")}
+    data = {"currency": "USD", "initial_balance": -10}
 
     with pytest.raises(ValidationError, match="negative"):
         create_wallet(user=user, data=data)

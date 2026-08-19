@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from rest_framework import serializers
 
 from ledger.transactions.models import TransactionLedger
@@ -16,7 +14,7 @@ class WalletNestedOutputSerializer(serializers.ModelSerializer):
             "id": {"help_text": "Primary key of the wallet."},
             "currency": {"help_text": "Currency code for this wallet."},
             "balance": {
-                "help_text": "Current wallet balance in the selected currency."
+                "help_text": "Current wallet balance in whole units of the selected currency."
             },
         }
 
@@ -24,11 +22,9 @@ class WalletNestedOutputSerializer(serializers.ModelSerializer):
 class CreditIncreaseInputSerializer(serializers.Serializer):
     """Input payload for crediting funds into a wallet."""
 
-    amount = serializers.DecimalField(
-        max_digits=20,
-        decimal_places=2,
-        min_value=Decimal("0.01"),
-        help_text="Amount to deposit into the wallet.",
+    amount = serializers.IntegerField(
+        min_value=1,
+        help_text="Amount to deposit into the wallet in whole units.",
     )
     idempotency_key = serializers.UUIDField(
         help_text="Unique key used to safely retry this deposit request.",
@@ -36,7 +32,8 @@ class CreditIncreaseInputSerializer(serializers.Serializer):
     description = serializers.CharField(
         required=False,
         allow_blank=True,
-        default="",
+        allow_null=True,
+        default=None,
         help_text="Optional note describing this deposit.",
     )
 

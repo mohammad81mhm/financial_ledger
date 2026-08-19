@@ -33,7 +33,6 @@ class TransactionLedger(BaseModel):
     )
     idempotency_key = models.UUIDField(
         unique=True,
-        db_index=True,
         verbose_name=_("Idempotency key"),
         help_text="Client-supplied key that guarantees at-most-once processing.",
     )
@@ -50,11 +49,9 @@ class TransactionLedger(BaseModel):
         verbose_name=_("Status"),
         help_text="Processing status of this transaction.",
     )
-    amount = models.DecimalField(
-        max_digits=20,
-        decimal_places=8,
+    amount = models.BigIntegerField(
         verbose_name=_("Amount"),
-        help_text="Transaction amount in the wallet currency.",
+        help_text="Transaction amount in whole units of the wallet currency.",
     )
     currency = models.CharField(
         max_length=3,
@@ -82,7 +79,8 @@ class TransactionLedger(BaseModel):
     )
     description = models.TextField(
         blank=True,
-        default="",
+        null=True,
+        default=None,
         verbose_name=_("Description"),
         help_text="Optional note describing this transaction.",
     )
@@ -92,8 +90,14 @@ class TransactionLedger(BaseModel):
         verbose_name_plural = _("transaction ledger entries")
         indexes = [
             models.Index(fields=["status"]),
-            models.Index(fields=["sender_wallet"]),
-            models.Index(fields=["receiver_wallet"]),
+            models.Index(fields=["sender_wallet", "created_at"], name="tx_sender_created_idx"),
+            models.Index(fields=["receiver_wallet", "created_at"], name="tx_receiver_created_idx"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name="transaction_amount_positive",
+            ),
         ]
 
     def __str__(self) -> str:

@@ -8,7 +8,6 @@ class BaseModel(models.Model):
     created_at = models.DateTimeField(
         verbose_name=_("created at"),
         help_text="Date and time when this record was created.",
-        db_index=True,
         auto_now_add=True,
         editable=False,
     )
