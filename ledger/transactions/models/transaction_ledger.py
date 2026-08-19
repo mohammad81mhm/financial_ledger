@@ -79,7 +79,8 @@ class TransactionLedger(BaseModel):
     )
     description = models.TextField(
         blank=True,
-        default="",
+        null=True,
+        default=None,
         verbose_name=_("Description"),
         help_text="Optional note describing this transaction.",
     )

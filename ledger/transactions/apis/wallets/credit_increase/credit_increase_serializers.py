@@ -32,7 +32,8 @@ class CreditIncreaseInputSerializer(serializers.Serializer):
     description = serializers.CharField(
         required=False,
         allow_blank=True,
-        default="",
+        allow_null=True,
+        default=None,
         help_text="Optional note describing this deposit.",
     )
 
