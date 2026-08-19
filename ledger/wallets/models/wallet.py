@@ -40,6 +40,10 @@ class Wallet(BaseModel):
                 fields=["user", "currency"],
                 name="unique_wallet_user_currency",
             ),
+            models.CheckConstraint(
+                check=models.Q(balance__gte=0),
+                name="wallet_balance_non_negative",
+            ),
         ]
 
     def __str__(self) -> str:

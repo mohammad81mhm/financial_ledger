@@ -92,6 +92,12 @@ class TransactionLedger(BaseModel):
             models.Index(fields=["sender_wallet", "created_at"], name="tx_sender_created_idx"),
             models.Index(fields=["receiver_wallet", "created_at"], name="tx_receiver_created_idx"),
         ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(amount__gt=0),
+                name="transaction_amount_positive",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.transaction_type}:{self.id}"
