@@ -24,6 +24,22 @@ convention = "google"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.django.test"
 python_files = ["test_*.py", "*_test.py", "tests.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 pythonpath = ["."]
-addopts = ["--strict-markers", "--strict-config", "-ra"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    "--color=yes",
+    "--code-highlight=yes",
+    "-ra",
+]
 testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+console_output_style = "count"
+filterwarnings = [
+    "ignore::DeprecationWarning:environ.compat",
+]
