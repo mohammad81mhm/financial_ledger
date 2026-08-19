@@ -91,6 +91,8 @@ class TransactionLedger(BaseModel):
         verbose_name_plural = _("transaction ledger entries")
         indexes = [
             models.Index(fields=["status"]),
+            models.Index(fields=["sender_wallet", "created_at"], name="tx_sender_created_idx"),
+            models.Index(fields=["receiver_wallet", "created_at"], name="tx_receiver_created_idx"),
         ]
 
     def __str__(self) -> str:
