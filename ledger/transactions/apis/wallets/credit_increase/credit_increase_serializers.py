@@ -13,9 +13,7 @@ class WalletNestedOutputSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "id": {"help_text": "Primary key of the wallet."},
             "currency": {"help_text": "Currency code for this wallet."},
-            "balance": {
-                "help_text": "Current wallet balance in whole units of the selected currency."
-            },
+            "balance": {"help_text": "Current wallet balance in whole units of the selected currency."},
         }
 
 
@@ -68,17 +66,11 @@ class CreditIncreaseOutputSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             "id": {"help_text": "Unique identifier for this transaction."},
-            "idempotency_key": {
-                "help_text": "Client-supplied key that guarantees at-most-once processing."
-            },
-            "transaction_type": {
-                "help_text": "Kind of wallet movement: deposit, withdrawal, or transfer."
-            },
+            "idempotency_key": {"help_text": "Client-supplied key that guarantees at-most-once processing."},
+            "transaction_type": {"help_text": "Kind of wallet movement: deposit, withdrawal, or transfer."},
             "status": {"help_text": "Processing status of this transaction."},
             "amount": {"help_text": "Transaction amount in the wallet currency."},
             "currency": {"help_text": "Currency code for this transaction."},
             "description": {"help_text": "Optional note describing this transaction."},
-            "created_at": {
-                "help_text": "Date and time when this transaction was recorded."
-            },
+            "created_at": {"help_text": "Date and time when this transaction was recorded."},
         }

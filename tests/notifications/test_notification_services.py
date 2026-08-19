@@ -1,12 +1,9 @@
-"""Unit tests for ledger.notifications.services."""
-
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
 from model_bakery import baker
 
-from ledger.notifications.constants import MESSAGE_TYPE_TRANSFER_RECEIVED
 from ledger.notifications.services import notify_transfer_received
 from ledger.transactions.models import TransactionLedger
 from ledger.wallets.models import Wallet
@@ -31,9 +28,7 @@ class TestNotifyTransferReceived:
             receiver_wallet=receiver_wallet,
         )
 
-        with patch(
-            "ledger.notifications.services.notification_services.get_channel_layer"
-        ) as mock_get_layer:
+        with patch("ledger.notifications.services.notification_services.get_channel_layer") as mock_get_layer:
             mock_layer = MagicMock()
             mock_get_layer.return_value = mock_layer
             mock_layer.group_send = MagicMock()
@@ -68,9 +63,7 @@ class TestNotifyTransferReceived:
             receiver_wallet=None,
         )
 
-        with patch(
-            "ledger.notifications.services.notification_services.get_channel_layer"
-        ) as mock_get_layer:
+        with patch("ledger.notifications.services.notification_services.get_channel_layer") as mock_get_layer:
             notify_transfer_received(ledger_entry=ledger_entry)
             mock_get_layer.assert_not_called()
 
@@ -88,8 +81,6 @@ class TestNotifyTransferReceived:
             receiver_wallet=receiver_wallet,
         )
 
-        with patch(
-            "ledger.notifications.services.notification_services.get_channel_layer"
-        ) as mock_get_layer:
+        with patch("ledger.notifications.services.notification_services.get_channel_layer") as mock_get_layer:
             notify_transfer_received(ledger_entry=ledger_entry)
             mock_get_layer.assert_not_called()

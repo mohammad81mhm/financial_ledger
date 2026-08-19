@@ -60,14 +60,10 @@ class TransactionListApi(AuthMixin, APIView):
         )
 
         filter_data = {
-            key: value
-            for key, value in validated.items()
-            if key not in _PAGINATION_PARAMS and value is not None
+            key: value for key, value in validated.items() if key not in _PAGINATION_PARAMS and value is not None
         }
 
-        transactions = get_transactions_for_user(user=request.user).order_by(
-            "-created_at"
-        )
+        transactions = get_transactions_for_user(user=request.user).order_by("-created_at")
         filterset = TransactionFilter(filter_data, queryset=transactions)
         return get_paginated_response_context(
             pagination_class=PageNumberPagination,

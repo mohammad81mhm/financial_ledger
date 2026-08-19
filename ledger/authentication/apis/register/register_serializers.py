@@ -6,6 +6,7 @@ from ledger.accounts.validators import validate_iranian_phone_number
 
 class RegisterInputSerializer(serializers.Serializer):
     """Input payload for registering a user."""
+
     username = serializers.CharField(max_length=150, help_text="Unique login name for this user.")
     password = serializers.CharField(
         write_only=True,

@@ -1,5 +1,3 @@
-"""Services for pushing real-time WebSocket notifications."""
-
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 

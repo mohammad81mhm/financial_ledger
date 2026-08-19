@@ -106,7 +106,5 @@ class TransactionLedger(BaseModel):
     def save(self, *args, **kwargs) -> None:
         """Persist a new ledger entry and reject updates to existing rows."""
         if self.pk and TransactionLedger.objects.filter(pk=self.pk).exists():
-            raise ImmutableTransactionError(
-                "TransactionLedger records cannot be updated."
-            )
+            raise ImmutableTransactionError("TransactionLedger records cannot be updated.")
         super().save(*args, **kwargs)

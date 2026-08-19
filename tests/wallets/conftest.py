@@ -1,5 +1,3 @@
-"""Fixtures for wallet-related tests."""
-
 import pytest
 from django.urls import reverse
 from model_bakery import baker

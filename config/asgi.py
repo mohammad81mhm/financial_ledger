@@ -1,5 +1,3 @@
-"""ASGI config for financial_ledger."""
-
 import os
 
 from channels.routing import ProtocolTypeRouter, URLRouter

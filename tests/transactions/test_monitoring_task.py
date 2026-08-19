@@ -12,11 +12,12 @@ def test_high_value_transfer_triggers_monitoring_task(user, wallet, receiver_wal
     wallet.balance = 20000
     wallet.save(update_fields=["balance"])
 
-    with patch(
-        "ledger.transactions.services.transaction_services.notify_monitoring_team.delay"
-    ) as mock_delay, patch(
-        "ledger.transactions.services.transaction_services.transaction.on_commit",
-        side_effect=lambda callback: callback(),
+    with (
+        patch("ledger.transactions.services.transaction_services.notify_monitoring_team.delay") as mock_delay,
+        patch(
+            "ledger.transactions.services.transaction_services.transaction.on_commit",
+            side_effect=lambda callback: callback(),
+        ),
     ):
         transfer_between_wallets(
             user=user,

@@ -6,9 +6,7 @@ from ledger.accounts.models import User
 from ledger.transactions.models import TransactionLedger
 
 
-def get_transaction_by_idempotency_key(
-    *, idempotency_key: UUID
-) -> QuerySet[TransactionLedger]:
+def get_transaction_by_idempotency_key(*, idempotency_key: UUID) -> QuerySet[TransactionLedger]:
     """Return transactions filtered by idempotency key.
 
     Args:
@@ -41,6 +39,6 @@ def get_transactions_for_user(*, user: User) -> QuerySet[TransactionLedger]:
     Returns:
         QuerySet[TransactionLedger]: Matching transaction rows.
     """
-    return TransactionLedger.objects.filter(
-        Q(sender_wallet__user=user) | Q(receiver_wallet__user=user)
-    ).select_related("sender_wallet", "receiver_wallet")
+    return TransactionLedger.objects.filter(Q(sender_wallet__user=user) | Q(receiver_wallet__user=user)).select_related(
+        "sender_wallet", "receiver_wallet"
+    )

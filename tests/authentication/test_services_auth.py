@@ -1,7 +1,6 @@
 import pytest
 from rest_framework.exceptions import ValidationError
 
-from ledger.accounts.models import User
 from ledger.authentication.services import create_token_pair, login_user, register_user
 
 

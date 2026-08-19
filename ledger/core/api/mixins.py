@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 
 from rest_framework.authentication import (
     BaseAuthentication,
-    SessionAuthentication,
     BasicAuthentication,
+    SessionAuthentication,
 )
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -23,6 +23,6 @@ class AuthMixin:
     authentication_classes: Sequence[type[BaseAuthentication]] = [
         JWTAuthentication,
         SessionAuthentication,
-        BasicAuthentication
+        BasicAuthentication,
     ]
     permission_classes: PermissionClassesType = (IsAuthenticated,)

@@ -1,5 +1,3 @@
-"""Tests for POST /api/transfers/ (TransferApi)."""
-
 from uuid import uuid4
 
 import pytest
@@ -19,9 +17,7 @@ def transfer_url() -> str:
 class TestTransferApi:
     """Tests for POST /api/transfers/."""
 
-    def test_creates_transfer_successfully(
-        self, authenticated_api_client, transfer_url, wallet, receiver_wallet
-    ):
+    def test_creates_transfer_successfully(self, authenticated_api_client, transfer_url, wallet, receiver_wallet):
         """happy path: transfer debits sender, credits receiver, returns 201."""
         payload = {
             "sender_wallet_id": wallet.id,
@@ -38,9 +34,7 @@ class TestTransferApi:
         assert result["sender_wallet"]["balance"] == 900
         assert result["receiver_wallet"]["balance"] == 300
 
-    def test_idempotent_retry_returns_200(
-        self, authenticated_api_client, transfer_url, wallet, receiver_wallet
-    ):
+    def test_idempotent_retry_returns_200(self, authenticated_api_client, transfer_url, wallet, receiver_wallet):
         """happy path: duplicate idempotency key returns 200 with original transaction."""
         idempotency_key = str(uuid4())
         payload = {
@@ -57,9 +51,7 @@ class TestTransferApi:
         assert second.status_code == status.HTTP_200_OK
         assert first.json()["result"]["id"] == second.json()["result"]["id"]
 
-    def test_rejects_currency_mismatch(
-        self, authenticated_api_client, transfer_url, wallet, wallet_eur
-    ):
+    def test_rejects_currency_mismatch(self, authenticated_api_client, transfer_url, wallet, wallet_eur):
         """sad path: transfer between wallets of different currencies returns 400."""
         payload = {
             "sender_wallet_id": wallet.id,
@@ -72,9 +64,7 @@ class TestTransferApi:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_rejects_insufficient_balance(
-        self, authenticated_api_client, transfer_url, wallet, receiver_wallet
-    ):
+    def test_rejects_insufficient_balance(self, authenticated_api_client, transfer_url, wallet, receiver_wallet):
         """sad path: transfer more than sender balance returns 400."""
         payload = {
             "sender_wallet_id": wallet.id,
@@ -87,9 +77,7 @@ class TestTransferApi:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_rejects_self_transfer(
-        self, authenticated_api_client, transfer_url, wallet
-    ):
+    def test_rejects_self_transfer(self, authenticated_api_client, transfer_url, wallet):
         """sad path: sender and receiver cannot be the same wallet."""
         payload = {
             "sender_wallet_id": wallet.id,

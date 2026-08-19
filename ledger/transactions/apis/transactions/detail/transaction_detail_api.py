@@ -20,10 +20,7 @@ class TransactionDetailApi(AuthMixin, APIView):
 
     @extend_schema(
         summary="Retrieve Transaction",
-        description=(
-            "Returns one transaction when the authenticated user owns the sender "
-            "or receiver wallet."
-        ),
+        description=("Returns one transaction when the authenticated user owns the sender or receiver wallet."),
         responses={200: SwaggerSerializer.wrap(TransactionDetailOutputSerializer)},
     )
     def get(self, request, transaction_id: UUID) -> Response:
