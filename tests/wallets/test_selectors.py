@@ -1,5 +1,3 @@
-"""Tests for ledger.wallets.selectors."""
-
 import pytest
 from model_bakery import baker
 

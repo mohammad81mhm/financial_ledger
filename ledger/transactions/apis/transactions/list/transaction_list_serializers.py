@@ -22,9 +22,7 @@ class TransactionListInputSerializer(serializers.Serializer):
         required=False,
         min_value=1,
         max_value=_MAX_PAGE_SIZE,
-        help_text=(
-            f"Number of items per page. Maximum allowed value is {_MAX_PAGE_SIZE}."
-        ),
+        help_text=(f"Number of items per page. Maximum allowed value is {_MAX_PAGE_SIZE}."),
     )
     from_date = serializers.DateField(
         required=False,
@@ -37,9 +35,7 @@ class TransactionListInputSerializer(serializers.Serializer):
     transaction_type = serializers.ChoiceField(
         required=False,
         choices=TransactionLedger.TransactionType.choices,
-        help_text=(
-            "Filter by transaction type: DEPOSIT, WITHDRAWAL, or TRANSFER."
-        ),
+        help_text=("Filter by transaction type: DEPOSIT, WITHDRAWAL, or TRANSFER."),
     )
     status = serializers.ChoiceField(
         required=False,
@@ -50,8 +46,7 @@ class TransactionListInputSerializer(serializers.Serializer):
         required=False,
         min_value=1,
         help_text=(
-            "Scope results to one owned wallet. Returns 404 when the wallet "
-            "does not belong to the authenticated user."
+            "Scope results to one owned wallet. Returns 404 when the wallet does not belong to the authenticated user."
         ),
     )
     currency = serializers.ChoiceField(
@@ -75,16 +70,12 @@ class TransactionListInputSerializer(serializers.Serializer):
         from_date = attrs.get("from_date")
         to_date = attrs.get("to_date")
         if from_date and to_date and from_date > to_date:
-            raise serializers.ValidationError(
-                {"from_date": "from_date must be on or before to_date."}
-            )
+            raise serializers.ValidationError({"from_date": "from_date must be on or before to_date."})
 
         min_amount = attrs.get("min_amount")
         max_amount = attrs.get("max_amount")
         if min_amount is not None and max_amount is not None and min_amount > max_amount:
-            raise serializers.ValidationError(
-                {"min_amount": "min_amount must be less than or equal to max_amount."}
-            )
+            raise serializers.ValidationError({"min_amount": "min_amount must be less than or equal to max_amount."})
 
         return attrs
 

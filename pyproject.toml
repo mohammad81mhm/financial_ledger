@@ -4,6 +4,17 @@ version = "0.1.0"
 description = "Financial ledger backend"
 requires-python = ">=3.12"
 
+[tool.black]
+line-length = 120
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+skip = [".git", ".venv", "venv", "__pycache__"]
+skip_glob = ["**/migrations/**"]
+known_first_party = ["config", "ledger", "tests"]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 120
@@ -11,7 +22,7 @@ exclude = [".git", ".venv", "venv", "__pycache__", "*/migrations/*"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "UP", "B", "SIM", "D"]
-ignore = ["D100", "D104", "D203", "D213"]
+ignore = ["D100", "D104", "D105", "D106", "D107", "D203", "D213"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
@@ -20,6 +31,11 @@ ignore = ["D100", "D104", "D203", "D213"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = ["E203", "W503"]
+exclude = [".git", "__pycache__", ".venv", "venv", "*/migrations/*", "staticfiles", ".pytest_cache", ".ruff_cache"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.django.test"

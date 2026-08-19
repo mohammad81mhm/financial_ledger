@@ -1,5 +1,3 @@
-"""Edge-case service tests for transaction operations."""
-
 from uuid import uuid4
 
 import pytest

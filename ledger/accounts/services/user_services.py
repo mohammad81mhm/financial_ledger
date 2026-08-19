@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 from ledger.accounts.models import User
-from ledger.accounts.selectors.user_selectors import get_user_by_username, get_user_by_phone_number
+from ledger.accounts.selectors.user_selectors import get_user_by_phone_number, get_user_by_username
 
 
 @transaction.atomic

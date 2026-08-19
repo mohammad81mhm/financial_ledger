@@ -1,5 +1,3 @@
-"""Tests for the password strength validator."""
-
 import pytest
 from django.core.exceptions import ValidationError
 

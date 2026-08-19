@@ -1,7 +1,6 @@
 import pytest
 from rest_framework.exceptions import ValidationError
 
-from ledger.accounts.models import User
 from ledger.accounts.services import create_superuser, create_user
 
 

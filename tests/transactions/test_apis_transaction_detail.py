@@ -1,5 +1,3 @@
-"""Tests for GET /api/transactions/{transaction_id}/ (TransactionDetailApi)."""
-
 from uuid import uuid4
 
 import pytest
@@ -13,9 +11,7 @@ from ledger.transactions.services import credit_increase
 class TestTransactionDetailApi:
     """Tests for GET /api/transactions/{transaction_id}/."""
 
-    def test_returns_own_transaction(
-        self, authenticated_api_client, transaction_detail_url, user, wallet
-    ):
+    def test_returns_own_transaction(self, authenticated_api_client, transaction_detail_url, user, wallet):
         """happy path: user retrieves their own transaction details."""
         ledger_entry, _ = credit_increase(
             user=user,
@@ -36,9 +32,7 @@ class TestTransactionDetailApi:
         assert result["transaction_type"] == TransactionLedger.TransactionType.DEPOSIT
         assert result["amount"] == 50
 
-    def test_returns_404_for_nonexistent_transaction(
-        self, authenticated_api_client, transaction_detail_url
-    ):
+    def test_returns_404_for_nonexistent_transaction(self, authenticated_api_client, transaction_detail_url):
         """sad path: nonexistent transaction ID returns 404."""
         response = authenticated_api_client.get(
             transaction_detail_url(transaction_id=uuid4()),

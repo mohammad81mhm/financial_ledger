@@ -40,9 +40,7 @@ def _get_existing_idempotent(*, idempotency_key: UUID) -> TransactionLedger | No
     Returns:
         TransactionLedger | None: Existing transaction or ``None``.
     """
-    return get_transaction_by_idempotency_key(
-        idempotency_key=idempotency_key
-    ).first()
+    return get_transaction_by_idempotency_key(idempotency_key=idempotency_key).first()
 
 
 def _reload_ledger_entry(*, ledger_entry: TransactionLedger) -> TransactionLedger:
@@ -53,19 +51,13 @@ def _reload_ledger_entry(*, ledger_entry: TransactionLedger) -> TransactionLedge
     transaction. Reloading ensures API responses include the updated
     `wallet.balance` values for sender/receiver.
     """
-
-    return (
-        TransactionLedger.objects.select_related(
-            "sender_wallet",
-            "receiver_wallet",
-        )
-        .get(pk=ledger_entry.pk)
-    )
+    return TransactionLedger.objects.select_related(
+        "sender_wallet",
+        "receiver_wallet",
+    ).get(pk=ledger_entry.pk)
 
 
-def _resolve_idempotent_transaction(
-    *, idempotency_key: UUID
-) -> tuple[TransactionLedger, bool] | None:
+def _resolve_idempotent_transaction(*, idempotency_key: UUID) -> tuple[TransactionLedger, bool] | None:
     """Return an idempotent transaction result when the key already exists.
 
     Args:
@@ -144,11 +136,7 @@ def _lock_wallets(*, wallet_ids: list[int]) -> list[Wallet]:
         list[Wallet]: Locked wallet instances ordered by primary key.
     """
     ordered_ids = sorted(set(wallet_ids))
-    return list(
-        Wallet.objects.select_for_update()
-        .filter(id__in=ordered_ids)
-        .order_by("id")
-    )
+    return list(Wallet.objects.select_for_update().filter(id__in=ordered_ids).order_by("id"))
 
 
 def _ensure_sufficient_balance(*, wallet: Wallet, amount: int) -> None:
@@ -227,9 +215,7 @@ def create_transaction_ledger(
     return ledger_entry
 
 
-def _schedule_monitoring_if_needed(
-    *, ledger_entry: TransactionLedger, amount: int
-) -> None:
+def _schedule_monitoring_if_needed(*, ledger_entry: TransactionLedger, amount: int) -> None:
     """Schedule a monitoring alert after commit for high-value transfers.
 
     Args:
@@ -239,15 +225,11 @@ def _schedule_monitoring_if_needed(
     if amount <= MONITORING_THRESHOLD:
         return
 
-    transaction.on_commit(
-        lambda: notify_monitoring_team.delay(transaction_id=str(ledger_entry.id))
-    )
+    transaction.on_commit(lambda: notify_monitoring_team.delay(transaction_id=str(ledger_entry.id)))
 
 
 @transaction.atomic
-def credit_increase(
-    *, user: User, wallet_id: int, data: dict
-) -> tuple[TransactionLedger, bool]:
+def credit_increase(*, user: User, wallet_id: int, data: dict) -> tuple[TransactionLedger, bool]:
     """Credit a wallet and record a deposit transaction.
 
     Args:
@@ -267,9 +249,7 @@ def credit_increase(
     _ensure_wallet_owned_by_user(user=user, wallet_id=wallet_id)
 
     idempotency_key = data["idempotency_key"]
-    idempotent_result = _resolve_idempotent_transaction(
-        idempotency_key=idempotency_key
-    )
+    idempotent_result = _resolve_idempotent_transaction(idempotency_key=idempotency_key)
     if idempotent_result is not None:
         return idempotent_result
 
@@ -297,9 +277,7 @@ def credit_increase(
 
 
 @transaction.atomic
-def credit_decrease(
-    *, user: User, wallet_id: int, data: dict
-) -> tuple[TransactionLedger, bool]:
+def credit_decrease(*, user: User, wallet_id: int, data: dict) -> tuple[TransactionLedger, bool]:
     """Debit a wallet and record a withdrawal transaction.
 
     Args:
@@ -320,9 +298,7 @@ def credit_decrease(
     _ensure_wallet_owned_by_user(user=user, wallet_id=wallet_id)
 
     idempotency_key = data["idempotency_key"]
-    idempotent_result = _resolve_idempotent_transaction(
-        idempotency_key=idempotency_key
-    )
+    idempotent_result = _resolve_idempotent_transaction(idempotency_key=idempotency_key)
     if idempotent_result is not None:
         return idempotent_result
 
@@ -351,9 +327,7 @@ def credit_decrease(
 
 
 @transaction.atomic
-def transfer_between_wallets(
-    *, user: User, data: dict
-) -> tuple[TransactionLedger, bool]:
+def transfer_between_wallets(*, user: User, data: dict) -> tuple[TransactionLedger, bool]:
     """Transfer funds between two wallets atomically.
 
     Args:
@@ -378,9 +352,7 @@ def transfer_between_wallets(
 
     _ensure_wallet_owned_by_user(user=user, wallet_id=sender_wallet_id)
 
-    idempotent_result = _resolve_idempotent_transaction(
-        idempotency_key=idempotency_key
-    )
+    idempotent_result = _resolve_idempotent_transaction(idempotency_key=idempotency_key)
     if idempotent_result is not None:
         return idempotent_result
 
@@ -392,9 +364,7 @@ def transfer_between_wallets(
         raise ValidationError(_("Sender and receiver wallets must be different."))
 
     try:
-        locked_wallets = _lock_wallets(
-            wallet_ids=[sender_wallet_id, receiver_wallet_id]
-        )
+        locked_wallets = _lock_wallets(wallet_ids=[sender_wallet_id, receiver_wallet_id])
         wallets_by_id = {wallet.id: wallet for wallet in locked_wallets}
 
         if len(wallets_by_id) != 2:
@@ -423,9 +393,7 @@ def transfer_between_wallets(
         _decrease_wallet_balance(wallet_id=sender_wallet_id, amount=amount)
         _increase_wallet_balance(wallet_id=receiver_wallet_id, amount=amount)
         _schedule_monitoring_if_needed(ledger_entry=ledger_entry, amount=amount)
-        transaction.on_commit(
-            lambda: notify_transfer_received(ledger_entry=ledger_entry)
-        )
+        transaction.on_commit(lambda: notify_transfer_received(ledger_entry=ledger_entry))
         return _reload_ledger_entry(ledger_entry=ledger_entry), False
     except IntegrityError as exc:
         return _handle_idempotency_integrity_error(

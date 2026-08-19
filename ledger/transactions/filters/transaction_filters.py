@@ -8,9 +8,7 @@ from ledger.wallets.models import Wallet
 class TransactionFilter(django_filters.FilterSet):
     """Query filters for transaction list endpoints."""
 
-    transaction_type = django_filters.ChoiceFilter(
-        choices=TransactionLedger.TransactionType.choices
-    )
+    transaction_type = django_filters.ChoiceFilter(choices=TransactionLedger.TransactionType.choices)
     status = django_filters.ChoiceFilter(choices=TransactionLedger.Status.choices)
     from_date = django_filters.DateFilter(method="filter_from_date")
     to_date = django_filters.DateFilter(method="filter_to_date")
@@ -42,6 +40,4 @@ class TransactionFilter(django_filters.FilterSet):
 
     def filter_wallet_id(self, queryset, name, value):
         """Filter transactions where the wallet is sender or receiver."""
-        return queryset.filter(
-            Q(sender_wallet_id=value) | Q(receiver_wallet_id=value)
-        )
+        return queryset.filter(Q(sender_wallet_id=value) | Q(receiver_wallet_id=value))

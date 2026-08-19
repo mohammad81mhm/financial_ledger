@@ -1,5 +1,3 @@
-"""Tests for POST /api/transactions/wallets/{wallet_id}/credit-decrease/."""
-
 from uuid import uuid4
 
 import pytest
@@ -21,18 +19,14 @@ def credit_decrease_url(wallet) -> str:
 class TestWalletCreditDecreaseApi:
     """Tests for POST /api/transactions/wallets/{wallet_id}/credit-decrease/."""
 
-    def test_returns_201_on_success(
-        self, authenticated_api_client, credit_decrease_url
-    ):
+    def test_returns_201_on_success(self, authenticated_api_client, credit_decrease_url):
         """happy path: credit decrease debits wallet and returns 201."""
         payload = {
             "amount": "100.00",
             "idempotency_key": str(uuid4()),
         }
 
-        response = authenticated_api_client.post(
-            credit_decrease_url, payload, format="json"
-        )
+        response = authenticated_api_client.post(credit_decrease_url, payload, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
         result = response.json()["result"]
@@ -40,9 +34,7 @@ class TestWalletCreditDecreaseApi:
         assert result["sender_wallet"]["balance"] == 900
         assert result["receiver_wallet"] is None
 
-    def test_idempotent_retry_returns_200(
-        self, authenticated_api_client, credit_decrease_url
-    ):
+    def test_idempotent_retry_returns_200(self, authenticated_api_client, credit_decrease_url):
         """happy path: duplicate idempotency key returns 200 with original transaction."""
         idempotency_key = str(uuid4())
         payload = {
@@ -50,29 +42,21 @@ class TestWalletCreditDecreaseApi:
             "idempotency_key": idempotency_key,
         }
 
-        first = authenticated_api_client.post(
-            credit_decrease_url, payload, format="json"
-        )
-        second = authenticated_api_client.post(
-            credit_decrease_url, payload, format="json"
-        )
+        first = authenticated_api_client.post(credit_decrease_url, payload, format="json")
+        second = authenticated_api_client.post(credit_decrease_url, payload, format="json")
 
         assert first.status_code == status.HTTP_201_CREATED
         assert second.status_code == status.HTTP_200_OK
         assert first.json()["result"]["id"] == second.json()["result"]["id"]
 
-    def test_rejects_insufficient_balance(
-        self, authenticated_api_client, credit_decrease_url
-    ):
+    def test_rejects_insufficient_balance(self, authenticated_api_client, credit_decrease_url):
         """sad path: deducting more than balance returns 400."""
         payload = {
             "amount": "9999.00",
             "idempotency_key": str(uuid4()),
         }
 
-        response = authenticated_api_client.post(
-            credit_decrease_url, payload, format="json"
-        )
+        response = authenticated_api_client.post(credit_decrease_url, payload, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 

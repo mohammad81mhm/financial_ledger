@@ -1,5 +1,3 @@
-"""Fixtures for account-related tests."""
-
 import pytest
 from django.urls import reverse
 

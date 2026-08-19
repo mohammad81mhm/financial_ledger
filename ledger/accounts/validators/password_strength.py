@@ -44,6 +44,5 @@ class PasswordStrengthValidator:
             str: Human-readable help text.
         """
         return _(
-            "Your password must contain at least one lowercase letter, "
-            "one uppercase letter, and one special character."
+            "Your password must contain at least one lowercase letter, one uppercase letter, and one special character."
         )

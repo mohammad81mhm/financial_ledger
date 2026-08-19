@@ -1,6 +1,3 @@
-"""Tests for ledger.wallets.services."""
-
-
 import pytest
 from rest_framework.exceptions import ValidationError
 

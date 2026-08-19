@@ -1,5 +1,3 @@
-"""Django Channels configuration."""
-
 from config.settings.redis import HOST_REDIS, PASSWORD_REDIS, PORT_REDIS
 
 CHANNEL_LAYERS = {

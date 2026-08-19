@@ -15,15 +15,28 @@ repos:
       - id: check-merge-conflict
       - id: detect-private-key
 
-  - repo: local
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        args: ["--settings-path", "pyproject.toml"]
+        exclude: migrations/
+
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        args: ["--config", "pyproject.toml"]
+        exclude: migrations/
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.10
     hooks:
       - id: ruff
-        name: ruff
-        entry: ruff check --fix
-        language: system
-        types: [python]
-      - id: ruff-format
-        name: ruff-format
-        entry: ruff format
-        language: system
-        types: [python]
+        args: ["--fix"]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.2.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-pyproject]

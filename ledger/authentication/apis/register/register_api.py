@@ -4,8 +4,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from ledger.authentication.apis.register.register_serializers import RegisterInputSerializer
 from ledger.authentication.apis.login.login_serializers import AuthOutputSerializer
+from ledger.authentication.apis.register.register_serializers import RegisterInputSerializer
 from ledger.authentication.constants import AUTHENTICATION_TAGS
 from ledger.authentication.services import register_user
 from ledger.core.serializers import SwaggerSerializer

@@ -1,5 +1,3 @@
-"""Shared pytest plugins and fixtures for the test suite."""
-
 import random
 from uuid import uuid4
 

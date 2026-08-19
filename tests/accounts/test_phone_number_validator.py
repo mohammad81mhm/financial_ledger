@@ -1,5 +1,3 @@
-"""Tests for the Iranian phone number validator."""
-
 import pytest
 from django.core.exceptions import ValidationError
 
