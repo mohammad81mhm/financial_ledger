@@ -33,6 +33,9 @@ class TestWalletCreditIncreaseApi:
         first_result = first_response.json()["result"]
         second_result = second_response.json()["result"]
         assert first_result["id"] == second_result["id"]
+        assert first_result["sender_wallet"] is None
+        assert first_result["receiver_wallet"]["balance"] == 1025
+        assert second_result["receiver_wallet"]["balance"] == 1025
 
     def test_requires_authentication(self, credit_increase_url):
         """sad path: credit increase rejects unauthenticated requests."""

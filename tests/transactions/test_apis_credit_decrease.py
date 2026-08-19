@@ -37,6 +37,8 @@ class TestWalletCreditDecreaseApi:
         assert response.status_code == status.HTTP_201_CREATED
         result = response.json()["result"]
         assert result["amount"] == 100
+        assert result["sender_wallet"]["balance"] == 900
+        assert result["receiver_wallet"] is None
 
     def test_idempotent_retry_returns_200(
         self, authenticated_api_client, credit_decrease_url
