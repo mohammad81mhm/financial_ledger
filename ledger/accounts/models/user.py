@@ -38,4 +38,7 @@ class User(AbstractUser, BaseModel):
         verbose_name_plural = _("users")
 
     def __str__(self) -> str:
-        return self.username
+        """
+        Return a string representation of the user.
+        """
+        return self.first_name + " " + self.last_name
