@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from ledger.accounts.validators import validate_iranian_phone_number
 from ledger.core.models import BaseModel
 
 
@@ -25,10 +26,11 @@ class User(AbstractUser, BaseModel):
         help_text="Family name of the user.",
     )
     phone_number = models.CharField(
-        max_length=20,
+        max_length=11,
         unique=True,
+        validators=[validate_iranian_phone_number],
         verbose_name=_("Phone number"),
-        help_text="Mobile phone number used to identify the user.",
+        help_text="Iranian mobile phone number (11 digits starting with 09).",
     )
 
     REQUIRED_FIELDS = ["first_name", "last_name", "phone_number"]
