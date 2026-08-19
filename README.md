@@ -59,7 +59,7 @@ Default superuser (created by `python manage.py initial`):
 | Field | Value |
 |---|---|
 | username | `admin` |
-| password | `Ledger!Pass2026` |
+| password | `admin123` |
 | phone_number | `09000000000` |
 
 ## Local development (host)
