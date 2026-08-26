@@ -32,6 +32,12 @@ class Wallet(BaseModel):
         help_text="Current wallet balance in whole units of the selected currency.",
     )
 
+    remaining_limit = models.BigIntegerField(
+        default=0,
+        verbose_name=_("Remaining limit"),
+        help_text="Remaining transferable amount for the current limitation period.",
+    )
+
     class Meta:
         verbose_name = _("wallet")
         verbose_name_plural = _("wallets")
@@ -43,6 +49,10 @@ class Wallet(BaseModel):
             models.CheckConstraint(
                 condition=models.Q(balance__gte=0),
                 name="wallet_balance_non_negative",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(remaining_limit__gte=0),
+                name="wallet_remaining_limit_non_negative",
             ),
         ]
 

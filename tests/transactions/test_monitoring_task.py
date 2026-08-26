@@ -10,7 +10,8 @@ from ledger.transactions.services import transfer_between_wallets
 def test_high_value_transfer_triggers_monitoring_task(user, wallet, receiver_wallet):
     """happy path: high-value transfers schedule a monitoring task after commit."""
     wallet.balance = 20000
-    wallet.save(update_fields=["balance"])
+    wallet.remaining_limit = 20000
+    wallet.save(update_fields=["balance", "remaining_limit"])
 
     with (
         patch("ledger.transactions.services.transaction_services.notify_monitoring_team.delay") as mock_delay,

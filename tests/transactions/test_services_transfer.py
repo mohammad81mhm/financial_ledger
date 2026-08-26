@@ -66,3 +66,46 @@ def test_transfer_between_wallets_rejects_self_transfer(user, wallet):
             user=user,
             data=data,
         )
+
+
+@pytest.mark.django_db
+def test_transfer_between_wallets_consumes_remaining_limit(user, wallet, receiver_wallet):
+    """happy path: successful transfer decreases the sender remaining limit."""
+    data = {
+        "sender_wallet_id": wallet.id,
+        "receiver_wallet_id": receiver_wallet.id,
+        "amount": 50,
+        "idempotency_key": uuid4(),
+    }
+
+    transfer_between_wallets(user=user, data=data)
+
+    wallet.refresh_from_db()
+    assert wallet.remaining_limit == 9_950
+
+
+@pytest.mark.django_db
+def test_transfer_between_wallets_rejects_insufficient_remaining_limit(
+    user,
+    wallet,
+    receiver_wallet,
+):
+    """sad path: transfer fails when amount exceeds the sender remaining limit."""
+    wallet.remaining_limit = 40
+    wallet.save(update_fields=["remaining_limit"])
+
+    data = {
+        "sender_wallet_id": wallet.id,
+        "receiver_wallet_id": receiver_wallet.id,
+        "amount": 50,
+        "idempotency_key": uuid4(),
+    }
+
+    with pytest.raises(ValidationError):
+        transfer_between_wallets(user=user, data=data)
+
+    wallet.refresh_from_db()
+    receiver_wallet.refresh_from_db()
+    assert wallet.balance == 1000
+    assert wallet.remaining_limit == 40
+    assert receiver_wallet.balance == 200

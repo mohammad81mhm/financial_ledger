@@ -326,9 +326,38 @@ def credit_decrease(*, user: User, wallet_id: int, data: dict) -> tuple[Transact
         )
 
 
+def _check_wallet_limitation(*, wallet: Wallet, amount: int) -> None:
+    """Ensure the wallet has enough remaining transfer limit for ``amount``.
+
+    Args:
+        wallet (Wallet): Locked sender wallet being debited.
+        amount (int): Transfer amount in whole currency units.
+
+    Raises:
+        ValidationError: When ``amount`` exceeds ``wallet.remaining_limit``.
+    """
+    if wallet.remaining_limit < amount:
+        raise ValidationError(_("Remaining transfer limit exceeded."))
+
+
+def _consume_remaining_limit(*, wallet: Wallet, amount: int) -> None:
+    """Decrease a wallet's remaining transfer limit by ``amount``.
+
+
+    Args:
+        wallet (Wallet): Wallet being debited.
+        amount (int): Amount to subtract from the remaining limit.
+    """
+    wallet.remaining_limit -= amount
+    wallet.save(update_fields=["remaining_limit"])
+
+
 @transaction.atomic
 def transfer_between_wallets(*, user: User, data: dict) -> tuple[TransactionLedger, bool]:
     """Transfer funds between two wallets atomically.
+
+    Debits the sender balance and remaining transfer limit, credits the
+    receiver balance, and schedules a transfer notification after commit.
 
     Args:
         user (User): Owner of the sender wallet.
@@ -343,7 +372,8 @@ def transfer_between_wallets(*, user: User, data: dict) -> tuple[TransactionLedg
     Raises:
         NotFound: When the sender wallet does not belong to the user or a wallet
             is missing.
-        ValidationError: When inputs are invalid.
+        ValidationError: When inputs are invalid or the sender remaining
+            transfer limit is insufficient.
         ApplicationError: When currencies differ or balance is insufficient.
     """
     sender_wallet_id = data["sender_wallet_id"]
@@ -379,6 +409,7 @@ def transfer_between_wallets(*, user: User, data: dict) -> tuple[TransactionLedg
                 code="currency_mismatch",
             )
 
+        _check_wallet_limitation(wallet=sender_wallet, amount=amount)
         _ensure_sufficient_balance(wallet=sender_wallet, amount=amount)
 
         ledger_entry = create_transaction_ledger(
@@ -392,6 +423,7 @@ def transfer_between_wallets(*, user: User, data: dict) -> tuple[TransactionLedg
         )
         _decrease_wallet_balance(wallet_id=sender_wallet_id, amount=amount)
         _increase_wallet_balance(wallet_id=receiver_wallet_id, amount=amount)
+        _consume_remaining_limit(wallet=sender_wallet, amount=amount)
         _schedule_monitoring_if_needed(ledger_entry=ledger_entry, amount=amount)
         transaction.on_commit(lambda: notify_transfer_received(ledger_entry=ledger_entry))
         return _reload_ledger_entry(ledger_entry=ledger_entry), False
